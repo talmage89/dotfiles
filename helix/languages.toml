@@ -1,0 +1,95 @@
+[language-server.vscode-json-language-server]
+command = "vscode-json-language-server"
+args = ["--stdio"]
+
+[language-server.vscode-json-language-server.config]
+provideFormatter = true
+
+[[language]]
+name = "json"
+language-servers = ["vscode-json-language-server"]
+
+[language-server.sql-language-server]
+command = "sql-language-server"
+args = ["up", "--method", "stdio", "--debug"]
+
+[language-server.sqls]
+command = "sqls"
+
+[[language]]
+name = "sql"
+language-servers = [ "sqls" ]
+
+[[language]]
+name = "bash"
+file-types = ["sh", {glob = "*rc"}]
+
+[language-server.eslint]
+command = "vscode-eslint-language-server"
+args = ["--stdio"]
+
+[language-server.eslint.config]
+validate = "on"
+experimental = { useFlatConfig = false }
+rulesCustomizations = []
+run = "onType"
+problems = { shortenToSingleLine = false }
+nodePath = ""
+
+[language-server.typescript-language-server]
+command = "npx"
+args = ["tsgo", "--lsp", "--stdio"]
+
+[language-server.typescript-language-server.config.typescript]
+updateImportsOnFileMove.enabled = "always"
+suggest.completeFunctionCalls = true
+tsserver.enableTracing = true
+inlayHints.parameterNames.enabled = "all"
+inlayHints.parameterTypes.enabled = true
+inlayHints.variableTypes.enabled = true
+inlayHints.propertyDeclarationTypes.enabled = true
+inlayHints.functionLikeReturnTypes = true
+inlayHints.enumMemberValues.enabled = true
+format.enable = false
+preferences.importModuleSpecifier = "non-relative"
+preferences.importModuleSpecifierEnding = "auto"
+tsserver.pluginPaths = ["typescript-plugin-css-modules", "./node_modules"]
+tsserver.experimental.enableProjectDiagnostics = true
+
+[[language]]
+name = "typescript"
+language-servers = ["typescript-language-server", "eslint"]
+auto-format = true
+formatter = { command = "fmt-eslint-prettier", args = ["file.tsx"] }
+
+[[language]]
+name = "tsx"
+roots = ["eslint.config.mjs", "package.json", "tsconfig.json"]
+language-servers = ["typescript-language-server", "eslint"]
+auto-format = true
+formatter = { command = "fmt-eslint-prettier", args = ["file.tsx"] }
+
+[[language]]
+name = "markdown"
+language-servers = ["marksman"]
+
+[language-server.marksman]
+command = "marksman"
+args = ["server"]
+
+[language-server.zenstack-language-server]
+command = "node"
+args = ["/opt/homebrew/lib/node_modules/zenstack/language-server/main.js", "--stdio"]
+
+[language-server.zenstack-language-server.config]
+format = { usePrismaStyle = true }
+
+[[language]]
+name = "zenstack"
+scope = "source.zmodel"
+file-types = ["zmodel"]
+roots = ["package.json", "schema.zmodel", ".git"]
+comment-token = "//"
+indent = { tab-width = 2, unit = "  " }
+language-servers = ["zenstack-language-server"]
+grammar = "prisma"

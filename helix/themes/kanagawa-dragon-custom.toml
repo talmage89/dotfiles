@@ -1,0 +1,7 @@
+inherits = "kanagawa-dragon"
+
+"ui.statusline" = { fg = "oldWhite", bg = "dragonBlack3" }
+"ui.statusline.inactive" = { fg = "dragonAsh", bg = "dragonBlack3" }
+"ui.bufferline" = { fg = "oldWhite", bg = "dragonBlack3" }
+"ui.bufferline.active" = { fg = "dragonYellow", bg = "dragonBlack5", modifiers = ["bold"] }
+"ui.bufferline.background" = { bg = "dragonBlack3" }

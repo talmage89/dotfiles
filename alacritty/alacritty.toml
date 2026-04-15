@@ -1,0 +1,34 @@
+[general]
+import = ["./themes/themes/kanagawa_dragon.toml"]
+
+[window]
+decorations = "None"
+startup_mode = "Maximized"
+option_as_alt = "Both"
+
+[scrolling]
+multiplier = 5
+
+[font]
+size = 14
+
+[font.normal]
+family = "FiraCode Nerd Font Mono"
+style = "Regular"
+
+[font.bold]
+family = "FiraCode Nerd Font Mono"
+style = "Bold"
+
+[keyboard]
+bindings = [
+  { key = "Left",  mods = "Option", chars = "\u001bb" },
+  { key = "Right", mods = "Option", chars = "\u001bf" },
+  { key = "Left",  mods = "Command", chars = "\u0001" },
+  { key = "Right", mods = "Command", chars = "\u0005" },
+  { key = "Backspace", mods = "Option", chars = "\u001b\u007f" },
+  { key = "Backspace", mods = "Command", chars = "\u0015" },
+  { key = "L", mods = "Command", chars = "\u000c" },
+  { key = "Return", mods = "Shift", chars = "\u001b\r" }
+]
+

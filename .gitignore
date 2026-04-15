@@ -1,0 +1,18 @@
+# Ignore everything
+*
+
+# Track these directories
+!.gitignore
+!.gitmodules
+!alacritty/
+!alacritty/**
+!helix/
+!helix/**
+!zellij/
+!zellij/**
+
+# Ignore runtime/build artifacts within tracked dirs
+helix/runtime/
+
+# Backup files
+*.bak
