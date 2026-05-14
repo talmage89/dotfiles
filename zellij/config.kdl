@@ -1,15 +1,25 @@
 keybinds {
     normal {
-        bind "Alt x" { CloseFocus; }
+        bind "Alt q" { CloseFocus; }
         unbind "Alt f"
         bind "Alt g" { ToggleFloatingPanes; }
+    }
+    shared_except "locked" {
+        unbind "Ctrl g"
+        bind "Ctrl /" { SwitchToMode "Locked"; }
+        bind "Alt h" "Alt Left"  { MoveFocus "Left"; }
+        bind "Alt l" "Alt Right" { MoveFocus "Right"; }
+    }
+    locked {
+        unbind "Ctrl g"
+        bind "Ctrl /" { SwitchToMode "Normal"; }
     }
 }
 
 themes {
     kanagawa-dragon {
         fg "#c5c9c5"
-        bg "#181616"
+        bg "#14181c"
         black "#0d0c0c"
         red "#c4746e"
         green "#8a9a7b"
@@ -19,6 +29,30 @@ themes {
         cyan "#8ea4a2"
         white "#a6a69c"
         orange "#ffa066"
+        frame_selected {
+            base 100 112 132
+            background 38 42 52
+            emphasis_0 130 142 160
+            emphasis_1 130 142 160
+            emphasis_2 130 142 160
+            emphasis_3 130 142 160
+        }
+        frame_unselected {
+            base 50 56 70
+            background 28 30 38
+            emphasis_0 70 78 96
+            emphasis_1 70 78 96
+            emphasis_2 70 78 96
+            emphasis_3 70 78 96
+        }
+        frame_highlight {
+            base 100 112 132
+            background 38 42 52
+            emphasis_0 130 142 160
+            emphasis_1 130 142 160
+            emphasis_2 130 142 160
+            emphasis_3 130 142 160
+        }
     }
 }
 
