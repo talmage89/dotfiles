@@ -36,25 +36,27 @@ layout {
         children
         pane size=1 borderless=true {
             plugin location="file:/Users/talmage/.config/zellij/plugins/zjstatus.wasm" {
-                format_left   "{mode}"
+                format_left   "{mode}#[bg=default,fg=#6C7086] {pipe_zjstatus_hints}"
                 format_center ""
                 format_right  ""
                 format_space  ""
 
                 border_enabled  "false"
 
-                mode_normal      "#[bg=#8ba4b0,fg=#181616,bold] NORMAL #[bg=default,fg=#6C7086] Ctrl+/ lock · Ctrl+p pane · Ctrl+t tab · Ctrl+s scroll · Ctrl+o session · Ctrl+q quit"
-                mode_locked      "#[bg=#c4746e,fg=#181616,bold] LOCKED #[bg=default,fg=#6C7086] Ctrl+/ unlock"
-                mode_resize      "#[bg=#c4b28a,fg=#181616,bold] RESIZE #[bg=default,fg=#6C7086] hjkl resize · +/- inc/dec · ESC exit"
-                mode_pane        "#[bg=#8a9a7b,fg=#181616,bold] PANE #[bg=default,fg=#6C7086] n new · d down · r right · x close · f fullscreen · w float · ESC exit"
-                mode_tab         "#[bg=#a292a3,fg=#181616,bold] TAB #[bg=default,fg=#6C7086] n new · x close · r rename · s sync · 1-9 jump · ESC exit"
-                mode_scroll      "#[bg=#8ea4a2,fg=#181616,bold] SCROLL #[bg=default,fg=#6C7086] j/k line · PgUp/PgDn page · e edit · s search · ESC exit"
-                mode_search      "#[bg=#8ea4a2,fg=#181616,bold] SEARCH #[bg=default,fg=#6C7086] n/p next/prev · c case · w whole-word · ESC exit"
-                mode_entersearch "#[bg=#8ea4a2,fg=#181616,bold] ENTER-SEARCH #[bg=default,fg=#6C7086] type query, then Enter"
-                mode_renametab   "#[bg=#a292a3,fg=#181616,bold] RENAME-TAB #[bg=default,fg=#6C7086] type name, then Enter"
-                mode_renamepane  "#[bg=#8a9a7b,fg=#181616,bold] RENAME-PANE #[bg=default,fg=#6C7086] type name, then Enter"
-                mode_session     "#[bg=#8ba4b0,fg=#181616,bold] SESSION #[bg=default,fg=#6C7086] d detach · w sessions · c configuration · ESC exit"
-                mode_move        "#[bg=#c4b28a,fg=#181616,bold] MOVE #[bg=default,fg=#6C7086] hjkl move pane · ESC exit"
+                pipe_zjstatus_hints_format "{output}"
+
+                mode_normal      "#[bg=#8ba4b0,fg=#181616,bold] NORMAL "
+                mode_locked      "#[bg=#c4746e,fg=#181616,bold] LOCKED "
+                mode_resize      "#[bg=#c4b28a,fg=#181616,bold] RESIZE "
+                mode_pane        "#[bg=#8a9a7b,fg=#181616,bold] PANE "
+                mode_tab         "#[bg=#a292a3,fg=#181616,bold] TAB "
+                mode_scroll      "#[bg=#8ea4a2,fg=#181616,bold] SCROLL "
+                mode_search      "#[bg=#8ea4a2,fg=#181616,bold] SEARCH "
+                mode_entersearch "#[bg=#8ea4a2,fg=#181616,bold] ENTER-SEARCH "
+                mode_renametab   "#[bg=#a292a3,fg=#181616,bold] RENAME-TAB "
+                mode_renamepane  "#[bg=#8a9a7b,fg=#181616,bold] RENAME-PANE "
+                mode_session     "#[bg=#8ba4b0,fg=#181616,bold] SESSION "
+                mode_move        "#[bg=#c4b28a,fg=#181616,bold] MOVE "
                 mode_prompt      "#[bg=#8ba4b0,fg=#181616,bold] PROMPT "
                 mode_tmux        "#[bg=#ffa066,fg=#181616,bold] TMUX "
             }

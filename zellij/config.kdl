@@ -1,6 +1,6 @@
 keybinds {
     normal {
-        bind "Alt q" { CloseFocus; }
+        bind "Alt q" { CloseFocus; SwitchToMode "Normal"; }
         unbind "Alt f"
         bind "Alt g" { ToggleFloatingPanes; }
     }
@@ -61,3 +61,16 @@ theme "kanagawa-dragon"
 // Allow applications to bypass Zellij's terminal emulation
 // Fixes garbled escape sequences in Claude Code and other TUI apps
 support_kitty_keyboard_protocol true
+
+plugins {
+    zjstatus-hints location="file:/Users/talmage/.config/zellij/plugins/zjstatus-hints.wasm" {
+        max_length 0
+        overflow_str "..."
+        pipe_name "zjstatus_hints"
+        hide_in_base_mode false
+    }
+}
+
+load_plugins {
+    zjstatus-hints
+}

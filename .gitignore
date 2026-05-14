@@ -18,3 +18,6 @@ helix/runtime/
 
 # Backup files
 *.bak
+
+# Zellij plugin binaries that must be installed manually (see zellij/README.md)
+zellij/plugins/zjstatus-hints.wasm
