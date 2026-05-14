@@ -1,0 +1,32 @@
+#!/bin/bash
+# Open a path (passed as $1) in VSCode, resolving relative paths against the
+# focused Zellij pane's tracked cwd. Used as the Alacritty hint command.
+set -eu
+
+ZELLIJ=/opt/homebrew/bin/zellij
+CODE=/usr/local/bin/code
+CACHE_DIR="$HOME/.cache/zellij-cwd"
+
+target="${1:-}"
+[[ -z "$target" ]] && exit 1
+
+# Expand a leading ~ since the shell never saw the click string.
+target="${target/#\~/$HOME}"
+
+# Absolute paths: open as-is.
+case "$target" in
+    /*) exec "$CODE" --goto "$target" ;;
+esac
+
+# Relative path: resolve against the focused Zellij pane's cwd.
+cwd="$HOME"
+if [[ -x "$ZELLIJ" ]]; then
+    pane_raw=$("$ZELLIJ" action list-clients 2>/dev/null \
+        | awk 'NR==2 {print $2}')
+    pane_id="${pane_raw#terminal_}"
+    if [[ -n "$pane_id" && -r "$CACHE_DIR/$pane_id" ]]; then
+        cwd=$(<"$CACHE_DIR/$pane_id")
+    fi
+fi
+
+exec "$CODE" --goto "$cwd/$target"

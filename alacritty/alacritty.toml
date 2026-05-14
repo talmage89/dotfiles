@@ -1,5 +1,8 @@
 [general]
-import = ["./themes/themes/kanagawa_dragon.toml"]
+import = ["./themes/themes/ashes_dark.toml"]
+
+[colors.primary]
+background = "#14181c"
 
 [window]
 decorations = "None"
@@ -8,6 +11,13 @@ option_as_alt = "Both"
 
 [scrolling]
 multiplier = 5
+
+[[hints.enabled]]
+regex = "(?:[~./][\\w./@-]+|/[\\w./@-]+|(?-u:\\b)[\\w./@-]+\\.[a-zA-Z]\\w*)(?::\\d+(?::\\d+)?)?"
+command = { program = "/bin/sh", args = ["-c", "exec \"$HOME/.config/alacritty/bin/alacritty-open-path\" \"$@\"", "sh"] }
+post_processing = true
+mouse = { enabled = true, mods = "Shift" }
+binding = { key = "O", mods = "Control|Shift" }
 
 [font]
 size = 14
