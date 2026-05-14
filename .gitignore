@@ -8,6 +8,8 @@
 !alacritty/**
 !helix/
 !helix/**
+!nvim/
+!nvim/**
 !zellij/
 !zellij/**
 
