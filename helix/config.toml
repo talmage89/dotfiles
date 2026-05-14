@@ -1,4 +1,4 @@
-theme = "kanagawa-dragon-custom"
+theme = "base16_terminal"
 
 [editor]
 clipboard-provider = "termcode"
