@@ -4,7 +4,11 @@ return {
   version = "1.*",
   dependencies = { "rafamadriz/friendly-snippets" },
   opts = {
-    keymap = { preset = "default" },
+    keymap = {
+      preset = "default",
+      ["<Tab>"] = { "accept", "snippet_forward", "fallback" },
+      ["<S-Tab>"] = { "snippet_backward", "fallback" },
+    },
     appearance = { nerd_font_variant = "mono" },
     completion = {
       accept = { auto_brackets = { enabled = true } },

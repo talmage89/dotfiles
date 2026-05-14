@@ -7,12 +7,12 @@ layout {
                 format_right  ""
                 format_space  ""
 
-                tab_normal              "#[fg=#6C7086] {name} "
-                tab_normal_fullscreen   "#[fg=#6C7086] {name} [F] "
-                tab_normal_sync         "#[fg=#6C7086] {name} [S] "
-                tab_active              "#[fg=#c4b28a,bold,italic] {name} "
-                tab_active_fullscreen   "#[fg=#c4b28a,bold,italic] {name} [F] "
-                tab_active_sync         "#[fg=#c4b28a,bold,italic] {name} [S] "
+                tab_normal              "#[fg=#323846]   {name} "
+                tab_normal_fullscreen   "#[fg=#323846]   {name} [F] "
+                tab_normal_sync         "#[fg=#323846]   {name} [S] "
+                tab_active              "#[fg=#647084,bold,italic] {name} "
+                tab_active_fullscreen   "#[fg=#647084,bold,italic] {name} [F] "
+                tab_active_sync         "#[fg=#647084,bold,italic] {name} [S] "
             }
         }
         children
@@ -23,20 +23,20 @@ layout {
                 format_right  ""
                 format_space  ""
 
-                mode_normal      "#[bg=#8ba4b0,fg=#181616,bold] NORMAL #[bg=default,fg=#6C7086] Ctrl+/ lock · Ctrl+p pane · Ctrl+t tab · Ctrl+n resize · Ctrl+h move · Ctrl+s scroll · Ctrl+o session · Ctrl+b tmux · Ctrl+q quit"
-                mode_locked      "#[bg=#c4746e,fg=#181616,bold] LOCKED #[bg=default,fg=#6C7086] Ctrl+/ unlock"
-                mode_resize      "#[bg=#c4b28a,fg=#181616,bold] RESIZE #[bg=default,fg=#6C7086] hjkl grow · HJKL shrink · +/- in/out · Ctrl+n exit"
-                mode_pane        "#[bg=#8a9a7b,fg=#181616,bold] PANE #[bg=default,fg=#6C7086] hjkl focus · n new · d down · r right · s stacked · x close · f fullscreen · w float · e embed · z frames · i pin · c rename · p switch · Ctrl+p exit"
-                mode_tab         "#[bg=#a292a3,fg=#181616,bold] TAB #[bg=default,fg=#6C7086] hl prev/next · 1-9 jump · n new · x close · r rename · s sync · b break · [/] break L/R · tab toggle · Ctrl+t exit"
-                mode_scroll      "#[bg=#8ea4a2,fg=#181616,bold] SCROLL #[bg=default,fg=#6C7086] j/k line · PgUp/Dn page · d/u half · e edit · s search · Ctrl+c bottom · Ctrl+s exit"
-                mode_search      "#[bg=#8ea4a2,fg=#181616,bold] SEARCH #[bg=default,fg=#6C7086] n/p next/prev · c case · w whole-word · o wrap · ESC exit"
-                mode_entersearch "#[bg=#8ea4a2,fg=#181616,bold] ENTER-SEARCH #[bg=default,fg=#6C7086] type query, then Enter · ESC cancel"
-                mode_renametab   "#[bg=#a292a3,fg=#181616,bold] RENAME-TAB #[bg=default,fg=#6C7086] type name, then Enter · ESC undo"
-                mode_renamepane  "#[bg=#8a9a7b,fg=#181616,bold] RENAME-PANE #[bg=default,fg=#6C7086] type name, then Enter · ESC undo"
-                mode_session     "#[bg=#8ba4b0,fg=#181616,bold] SESSION #[bg=default,fg=#6C7086] d detach · w sessions · c config · l layouts · p plugins · a about · s share · Ctrl+o exit"
-                mode_move        "#[bg=#c4b28a,fg=#181616,bold] MOVE #[bg=default,fg=#6C7086] hjkl move · n next · p prev · tab cycle · Ctrl+h exit"
-                mode_prompt      "#[bg=#8ba4b0,fg=#181616,bold] PROMPT #[bg=default,fg=#6C7086] Enter confirm · ESC cancel"
-                mode_tmux        "#[bg=#ffa066,fg=#181616,bold] TMUX #[bg=default,fg=#6C7086] hjkl focus · \"/% split · c new tab · n/p next/prev · z full · , rename · [ scroll · d detach · ESC exit"
+                mode_normal      "#[bg=#8ba4b0,fg=#181616,bold] NORMAL #[bg=default,fg=#323846]  Ctrl+/ lock   Ctrl+p pane   Ctrl+t tab   Ctrl+n resize   Ctrl+h move   Ctrl+s scroll   Ctrl+o session   Ctrl+b tmux   Ctrl+q quit"
+                mode_locked      "#[bg=#c4746e,fg=#181616,bold] LOCKED #[bg=default,fg=#323846]  Ctrl+/ unlock"
+                mode_resize      "#[bg=#c4b28a,fg=#181616,bold] RESIZE #[bg=default,fg=#323846]  hjkl grow   HJKL shrink   +/- in/out   Ctrl+n exit"
+                mode_pane        "#[bg=#8a9a7b,fg=#181616,bold] PANE #[bg=default,fg=#323846]  hjkl focus   n new   d down   r right   s stacked   x close   f fullscreen   w float   e embed   z frames   i pin   c rename   p switch   Ctrl+p exit"
+                mode_tab         "#[bg=#a292a3,fg=#181616,bold] TAB #[bg=default,fg=#323846]  hl prev/next   1-9 jump   n new   x close   r rename   s sync   b break   [/] break L/R   tab toggle   Ctrl+t exit"
+                mode_scroll      "#[bg=#8ea4a2,fg=#181616,bold] SCROLL #[bg=default,fg=#323846]  j/k line   PgUp/Dn page   d/u half   e edit   s search   Ctrl+c bottom   Ctrl+s exit"
+                mode_search      "#[bg=#8ea4a2,fg=#181616,bold] SEARCH #[bg=default,fg=#323846]  n/p next/prev   c case   w whole-word   o wrap   ESC exit"
+                mode_entersearch "#[bg=#8ea4a2,fg=#181616,bold] ENTER-SEARCH #[bg=default,fg=#323846]  type query, then Enter   ESC cancel"
+                mode_renametab   "#[bg=#a292a3,fg=#181616,bold] RENAME-TAB #[bg=default,fg=#323846]  type name, then Enter   ESC undo"
+                mode_renamepane  "#[bg=#8a9a7b,fg=#181616,bold] RENAME-PANE #[bg=default,fg=#323846]  type name, then Enter   ESC undo"
+                mode_session     "#[bg=#8ba4b0,fg=#181616,bold] SESSION #[bg=default,fg=#323846]  d detach   w sessions   c config   l layouts   p plugins   a about   s share   Ctrl+o exit"
+                mode_move        "#[bg=#c4b28a,fg=#181616,bold] MOVE #[bg=default,fg=#323846]  hjkl move   n next   p prev   tab cycle   Ctrl+h exit"
+                mode_prompt      "#[bg=#8ba4b0,fg=#181616,bold] PROMPT #[bg=default,fg=#323846]  Enter confirm   ESC cancel"
+                mode_tmux        "#[bg=#ffa066,fg=#181616,bold] TMUX #[bg=default,fg=#323846]  hjkl focus   \"/% split   c new tab   n/p next/prev   z full   , rename   [ scroll   d detach   ESC exit"
             }
         }
     }

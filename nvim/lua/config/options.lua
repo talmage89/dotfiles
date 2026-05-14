@@ -48,3 +48,26 @@ o.winborder = "rounded"
 o.cmdheight = 0
 
 vim.g.have_nerd_font = true
+
+local function tabline()
+  local pieces = {}
+  for i = 1, vim.fn.tabpagenr("$") do
+    local buflist = vim.fn.tabpagebuflist(i)
+    local bufnr = buflist[vim.fn.tabpagewinnr(i)]
+    local name = vim.fn.bufname(bufnr)
+    local label = name == "" and "[No Name]" or vim.fs.basename(name)
+    local modified = false
+    for _, b in ipairs(buflist) do
+      if vim.bo[b].modified then
+        modified = true
+        break
+      end
+    end
+    local hl = i == vim.fn.tabpagenr() and "%#TabLineSel#" or "%#TabLine#"
+    pieces[#pieces + 1] = hl .. "%" .. i .. "T " .. (modified and "+ " or "") .. label .. " "
+  end
+  return table.concat(pieces) .. "%#TabLineFill#%T"
+end
+
+_G.tabline = tabline
+vim.o.tabline = "%!v:lua.tabline()"
