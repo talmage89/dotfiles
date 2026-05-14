@@ -1,21 +1,24 @@
 return {
-  "rebelot/kanagawa.nvim",
+  "folke/tokyonight.nvim",
   lazy = false,
   priority = 1000,
   opts = {
-    background = { dark = "dragon", light = "lotus" },
-    colors = {
-      theme = {
-        all = {
-          ui = {
-            bg_gutter = "none",
-          },
-        },
-      },
+    style = "night",
+    styles = {
+      comments = { italic = true },
+      keywords = { italic = false },
     },
+    on_colors = function(c)
+      c.bg = "#14181c"
+      c.bg_dark = "#0f1318"
+      c.bg_float = "#1a1f25"
+      c.bg_popup = "#1a1f25"
+      c.bg_sidebar = "#14181c"
+      c.bg_statusline = "#1a1f25"
+    end,
   },
   config = function(_, opts)
-    require("kanagawa").setup(opts)
-    vim.cmd.colorscheme("kanagawa-dragon")
+    require("tokyonight").setup(opts)
+    vim.cmd.colorscheme("tokyonight-night")
   end,
 }

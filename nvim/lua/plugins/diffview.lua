@@ -21,6 +21,12 @@ return {
       DiffviewOpen = { "--imply-local" },
     },
     enhanced_diff_hl = true,
+    hooks = {
+      diff_buf_win_enter = function(_, winid)
+        vim.wo[winid].foldenable = false
+        vim.wo[winid].foldcolumn = "0"
+      end,
+    },
     view = {
       default = { layout = "diff2_horizontal" },
       merge_tool = { layout = "diff3_mixed" },
