@@ -8,6 +8,7 @@ background = "#14181c"
 decorations = "None"
 startup_mode = "Maximized"
 option_as_alt = "Both"
+dynamic_padding = true
 
 [scrolling]
 multiplier = 5
