@@ -1,0 +1,46 @@
+# Neovim config — orientation for Claude Code
+
+A modular, power-user-shaped configuration. The layout exists so any
+change is small, local, and easy to roll back. Preserve that property.
+
+## Layout
+
+`init.lua` is a launcher; never put logic there. Editor behavior
+(options, keymaps not tied to a plugin, autocmds) lives in
+`lua/config/`. Each plugin gets its own file in `lua/plugins/`
+returning a lazy.nvim spec. The filename describes the plugin's
+purpose (`diffview.lua`), not the upstream repo name. Plugin-specific
+keymaps belong in the plugin's file, not in the global keymaps file.
+
+## When extending
+
+Adding a plugin → new file in `lua/plugins/`. Lazy-load when sensible
+(`event`, `cmd`, `ft`, `keys`). Set keymaps via the spec's `keys`
+field when you can — it defers the plugin's load until the key fires.
+
+Changing settings → editor-wide goes in `lua/config/`, plugin-specific
+goes in the plugin's file. Never `init.lua`.
+
+LSP uses the Neovim 0.11+ native API (`vim.lsp.config` /
+`vim.lsp.enable`). Do not reintroduce `require('lspconfig').setup{}`.
+Servers are installed by mason-tool-installer (`ensure_installed`
+list in `lua/plugins/lsp.lua`).
+
+Formatting goes through conform.nvim — add new filetypes to
+`formatters_by_ft` in `lua/plugins/formatting.lua`. Lockfiles
+(`*.lock`, `*-lock.json`) are skipped automatically; preserve that.
+
+## Style
+
+No tutorial comments — comments only when the *why* is non-obvious.
+No backwards-compat shims; migrate forward, delete the old. Leader is
+space. `<C-h>` / `<C-l>` are reserved for window navigation; if a
+plugin binds them, disable those keys in its config.
+
+## Repository
+
+This directory lives inside the user's dotfiles repo at `~/.config/`
+(`github.com:talmage89/dotfiles.git`). Commit and push after a
+working change. Commit messages use lowercase conventional commits
+scoped as `(nvim)`. `lazy-lock.json` is tracked — commit changes to
+it alongside plugin additions or upgrades.
