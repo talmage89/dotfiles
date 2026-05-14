@@ -1,6 +1,5 @@
 keybinds {
     normal {
-        bind "Alt x" { CloseFocus; SwitchToMode "Normal"; }
         unbind "Alt f"
         bind "Alt g" { ToggleFloatingPanes; }
     }
@@ -9,6 +8,7 @@ keybinds {
         bind "Ctrl /" { SwitchToMode "Locked"; }
         bind "Alt h" "Alt Left"  { MoveFocus "Left"; }
         bind "Alt l" "Alt Right" { MoveFocus "Right"; }
+        bind "Alt x" { SwitchToMode "Normal"; CloseFocus; }
     }
     locked {
         unbind "Ctrl g"
@@ -16,8 +16,14 @@ keybinds {
     }
 }
 
+plugins {
+    zjstatus location="file:~/.config/zellij/plugins/zjstatus.wasm" {
+        border_enabled "false"
+    }
+}
+
 themes {
-    kanagawa-dragon {
+    obsidian {
         fg "#c5c9c5"
         bg "#14181c"
         black "#0d0c0c"
@@ -56,8 +62,9 @@ themes {
     }
 }
 
-theme "kanagawa-dragon"
+theme "obsidian"
 
 // Allow applications to bypass Zellij's terminal emulation
 // Fixes garbled escape sequences in Claude Code and other TUI apps
 support_kitty_keyboard_protocol true
+show_startup_tips false
