@@ -37,6 +37,17 @@ No backwards-compat shims; migrate forward, delete the old. Leader is
 space. `<C-h>` / `<C-l>` are reserved for window navigation; if a
 plugin binds them, disable those keys in its config.
 
+## Pinned versions
+
+- **nvim-treesitter is pinned to `branch = "main"`.** The previous
+  `master` branch was archived in April 2026 and is not compatible
+  with Neovim 0.12+. The main branch is a full rewrite with an
+  incompatible API: no `nvim-treesitter.configs`, no `ensure_installed`,
+  no lazy-load triggers (must be `lazy = false`). Parsers install via
+  `require("nvim-treesitter").install({...})` and highlight is enabled
+  per-FileType via `vim.treesitter.start()`.
+- **blink.cmp is pinned to `version = "1.*"`.** v2 is breaking.
+
 ## Repository
 
 This directory lives inside the user's dotfiles repo at `~/.config/`

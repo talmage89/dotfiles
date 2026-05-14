@@ -696,16 +696,20 @@ gitcommit, gitignore, yaml, toml, regex, xml, html, css, and more.
 Adding a language: edit the `ensure_installed` list, save, run
 `:TSUpdate`.
 
-### Two key behaviors
+### How parsers are installed
 
-1. **`auto_install = true`** — when you open a file in a language not
-   yet parsed, treesitter downloads and compiles its parser on the fly.
-2. **`highlight = true`** — enables treesitter-based highlighting
-   (the default).
+The explicit list in the plugin file's `require("nvim-treesitter").install({...})`
+call is the source of truth. New language: add it to the list, save,
+run `:TSUpdate` (or `:Lazy build nvim-treesitter`). Existing languages
+update automatically on plugin upgrade because `build = ":TSUpdate"`
+runs on every install/update.
 
-> **Pinned to `branch = "master"`** — the default `main` branch has a
-> totally different API. Don't remove the `branch = "master"` line in
-> the plugin spec.
+> **Pinned to `branch = "main"`.** The old `master` branch was archived
+> in April 2026 and is incompatible with Neovim 0.12. The main branch
+> is a full rewrite — no `nvim-treesitter.configs`, no `ensure_installed`,
+> no lazy-load triggers. Parsers are installed via
+> `require("nvim-treesitter").install({...})` and highlight is enabled
+> per-FileType via `vim.treesitter.start()`.
 
 ---
 
