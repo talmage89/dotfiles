@@ -22,9 +22,20 @@ return {
     },
     enhanced_diff_hl = true,
     hooks = {
-      diff_buf_win_enter = function(_, winid)
+      diff_buf_win_enter = function(_, winid, ctx)
         vim.wo[winid].foldenable = false
         vim.wo[winid].foldcolumn = "0"
+        local sym = ctx and ctx.symbol
+        local extra
+        if sym == "a" then
+          extra = "DiffChange:DiffDelete,DiffText:DiffTextAsDelete"
+        elseif sym == "b" then
+          extra = "DiffChange:DiffAdd,DiffText:DiffTextAsAdd"
+        end
+        if extra then
+          local cur = vim.wo[winid].winhl
+          vim.wo[winid].winhl = cur == "" and extra or cur .. "," .. extra
+        end
       end,
     },
     view = {
@@ -33,7 +44,7 @@ return {
       file_history = { layout = "diff2_horizontal" },
     },
     file_panel = {
-      listing_style = "tree",
+      listing_style = "list",
       win_config = { position = "left", width = 35 },
     },
     keymaps = {

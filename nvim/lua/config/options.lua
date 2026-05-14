@@ -40,6 +40,7 @@ o.confirm = true
 
 o.list = true
 o.listchars = "tab:» ,trail:·,nbsp:␣"
+o.fillchars = "diff: "
 
 o.completeopt = "menu,menuone,noselect"
 o.pumheight = 12
