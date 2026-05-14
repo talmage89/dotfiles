@@ -4,13 +4,14 @@ return {
   lazy = false,
   build = ":TSUpdate",
   config = function()
+    vim.treesitter.language.register("json", "jsonc")
+
     require("nvim-treesitter").install({
       "typescript",
       "tsx",
       "javascript",
       "jsdoc",
       "json",
-      "jsonc",
       "markdown",
       "markdown_inline",
       "bash",
