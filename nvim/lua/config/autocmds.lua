@@ -26,3 +26,17 @@ autocmd("FileType", {
     vim.keymap.set("n", "q", "<cmd>close<CR>", { buffer = event.buf, silent = true })
   end,
 })
+
+local cmdheight_group = augroup("cmdheight_toggle", { clear = true })
+autocmd("CmdlineEnter", {
+  group = cmdheight_group,
+  callback = function()
+    vim.o.cmdheight = 1
+  end,
+})
+autocmd("CmdlineLeave", {
+  group = cmdheight_group,
+  callback = function()
+    vim.o.cmdheight = 0
+  end,
+})

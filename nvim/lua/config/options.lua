@@ -45,4 +45,6 @@ o.completeopt = "menu,menuone,noselect"
 o.pumheight = 12
 o.winborder = "rounded"
 
+o.cmdheight = 0
+
 vim.g.have_nerd_font = true

@@ -9,6 +9,8 @@ return {
         input = {
           keys = {
             ["<Esc>"] = { "close", mode = { "n", "i" } },
+            ["<M-BS>"] = { "<c-s-w>", mode = "i", expr = true, desc = "Delete word (Opt+BS)" },
+            ["<C-u>"]  = { "<c-s-u>", mode = "i", expr = true, desc = "Delete to start (Cmd+BS)" },
           },
         },
       },
@@ -17,8 +19,8 @@ return {
     quickfile = { enabled = true },
   },
   keys = {
-    { "<leader>ff", function() Snacks.picker.files() end, desc = "Find files" },
-    { "<leader>fF", function() Snacks.picker.files({ hidden = true, ignored = true }) end, desc = "Find files (incl. hidden/ignored)" },
+    { "<leader>ff", function() Snacks.picker.files({ hidden = true }) end, desc = "Find files" },
+    { "<leader>fF", function() Snacks.picker.files({ hidden = true, ignored = true }) end, desc = "Find files (incl. ignored)" },
     { "<leader>fr", function() Snacks.picker.recent() end, desc = "Recent files" },
     { "<leader>fb", function() Snacks.picker.buffers() end, desc = "Buffers" },
     { "<leader>fg", function() Snacks.picker.grep() end, desc = "Grep workspace" },
@@ -32,5 +34,25 @@ return {
     { "<leader>fc", function() Snacks.picker.command_history() end, desc = "Command history" },
     { "<leader>fp", function() Snacks.picker.pickers() end, desc = "All pickers" },
     { "<leader>fR", function() Snacks.picker.resume() end, desc = "Resume last picker" },
+    { "<leader>gp", function()
+        Snacks.picker.git_log({
+          confirm = function(picker, item)
+            picker:close()
+            if item and item.commit then
+              vim.cmd("DiffviewOpen " .. item.commit .. "..HEAD")
+            end
+          end,
+        })
+      end, desc = "Git: pick commit → diff vs HEAD" },
+    { "<leader>gP", function()
+        Snacks.picker.git_log({
+          confirm = function(picker, item)
+            picker:close()
+            if item and item.commit then
+              vim.cmd("DiffviewOpen " .. item.commit .. "^.." .. item.commit)
+            end
+          end,
+        })
+      end, desc = "Git: pick commit → diff that commit only" },
   },
 }
