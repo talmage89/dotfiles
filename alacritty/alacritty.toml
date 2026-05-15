@@ -21,7 +21,7 @@ mouse = { enabled = true, mods = "Shift" }
 binding = { key = "O", mods = "Control|Shift" }
 
 [font]
-size = 14
+size = 12
 
 [font.normal]
 family = "FiraCode Nerd Font Mono"
