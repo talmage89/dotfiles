@@ -46,7 +46,10 @@ plugin binds them, disable those keys in its config.
   no lazy-load triggers (must be `lazy = false`). Parsers install via
   `require("nvim-treesitter").install({...})` and highlight is enabled
   per-FileType via `vim.treesitter.start()`.
-- **blink.cmp is pinned to `version = "1.*"`.** v2 is breaking.
+- **blink.cmp is pinned to `version = "1.*"`** (currently the latest
+  stable, `v1.10.2`). The `main` branch is in-progress v2 work — no v2
+  tag yet. When v2.0.0 ships, switch to `"2.*"` and add `saghen/blink.lib`
+  as a dependency (see upstream `UPGRADE.md` for the full diff).
 
 ## Repository
 
