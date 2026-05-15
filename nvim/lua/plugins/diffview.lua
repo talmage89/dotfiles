@@ -60,4 +60,8 @@ return {
       },
     },
   },
+  config = function(_, opts)
+    require("patches.diffview")()
+    require("diffview").setup(opts)
+  end,
 }
