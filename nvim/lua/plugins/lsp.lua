@@ -24,15 +24,6 @@ return {
     },
   },
   {
-    "folke/lazydev.nvim",
-    ft = "lua",
-    opts = {
-      library = {
-        { path = "${3rd}/luv/library", words = { "vim%.uv" } },
-      },
-    },
-  },
-  {
     "neovim/nvim-lspconfig",
     event = { "BufReadPre", "BufNewFile" },
     dependencies = {
@@ -124,17 +115,7 @@ return {
         },
       })
 
-      vim.lsp.config("lua_ls", {
-        settings = {
-          Lua = {
-            workspace = { checkThirdParty = false },
-            telemetry = { enable = false },
-            hint = { enable = true },
-          },
-        },
-      })
-
-      vim.lsp.enable({ "vtsls", "lua_ls", "jsonls", "bashls", "marksman" })
+      vim.lsp.enable({ "vtsls", "jsonls", "bashls", "marksman" })
     end,
   },
 }
