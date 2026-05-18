@@ -4,7 +4,7 @@ o.number = true
 o.relativenumber = true
 o.cursorline = true
 o.signcolumn = "yes"
-o.scrolloff = 8
+o.scrolloff = 15
 o.sidescrolloff = 8
 
 o.expandtab = true

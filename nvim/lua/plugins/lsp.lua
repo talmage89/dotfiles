@@ -64,7 +64,7 @@ return {
           map("n", "K", vim.lsp.buf.hover, "LSP: hover docs")
           map("n", "<leader>rn", vim.lsp.buf.rename, "LSP: rename symbol")
           map({ "n", "v" }, "<leader>ca", vim.lsp.buf.code_action, "LSP: code action")
-          map("n", "<leader>e", vim.diagnostic.open_float, "LSP: diagnostic float")
+          map("n", "<leader>cd", vim.diagnostic.open_float, "LSP: diagnostic float")
           map("n", "[d", function() vim.diagnostic.jump({ count = -1, float = true }) end, "Prev diagnostic")
           map("n", "]d", function() vim.diagnostic.jump({ count = 1, float = true }) end, "Next diagnostic")
           map("n", "<leader>ih", function()
@@ -80,6 +80,9 @@ return {
       vim.lsp.config("vtsls", {
         settings = {
           typescript = {
+            tsserver = {
+              maxTsServerMemory = 8192,
+            },
             preferences = {
               importModuleSpecifier = "non-relative",
               importModuleSpecifierEnding = "auto",

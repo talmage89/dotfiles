@@ -30,3 +30,15 @@ map("i", "<M-BS>", "<C-w>", { desc = "Delete word backward (Opt+BS)" })
 map("c", "<M-BS>", "<C-w>", { desc = "Delete word backward (Opt+BS)" })
 
 map("i", "jk", "<Esc>", { desc = "Exit insert mode" })
+
+local function yank_path(modifier, label)
+  return function()
+    local path = vim.fn.expand("%" .. modifier)
+    vim.fn.setreg("+", path)
+    vim.notify("Copied " .. label .. ": " .. path)
+  end
+end
+
+map("n", "<leader>yp", yank_path(":.", "relative path"), { desc = "Yank: relative path" })
+map("n", "<leader>yP", yank_path(":p", "absolute path"), { desc = "Yank: absolute path" })
+map("n", "<leader>yf", yank_path(":t", "filename"), { desc = "Yank: filename" })

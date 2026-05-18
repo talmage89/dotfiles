@@ -12,7 +12,20 @@ return {
       },
       sections = {
         lualine_a = { "mode" },
-        lualine_b = { "branch", "diff", "diagnostics" },
+        lualine_b = {
+          {
+            "branch",
+            fmt = function(branch)
+              if not branch or branch == "" then
+                return branch or ""
+              end
+              local stripped = branch:gsub("^[^/]+/", "")
+              return stripped:match("^(%a+%-%d+)") or stripped
+            end,
+          },
+          "diff",
+          "diagnostics",
+        },
         lualine_c = { { "filename", path = 1 } },
         lualine_x = { "filetype" },
         lualine_y = { "progress" },
