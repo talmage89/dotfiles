@@ -26,7 +26,16 @@ return {
           "diff",
           "diagnostics",
         },
-        lualine_c = { { "filename", path = 1 } },
+        lualine_c = {
+          { "filename", path = 1 },
+          {
+            function()
+              local reg = vim.fn.reg_recording()
+              return reg ~= "" and ("recording @" .. reg) or ""
+            end,
+            color = { fg = "#ff9e64", gui = "bold" },
+          },
+        },
         lualine_x = { "filetype" },
         lualine_y = { "progress" },
         lualine_z = { "location" },

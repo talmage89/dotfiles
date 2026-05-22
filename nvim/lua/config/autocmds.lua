@@ -40,3 +40,12 @@ autocmd("CmdlineLeave", {
     vim.o.cmdheight = 0
   end,
 })
+
+autocmd({ "RecordingEnter", "RecordingLeave" }, {
+  group = augroup("lualine_macro_refresh", { clear = true }),
+  callback = function()
+    pcall(function()
+      require("lualine").refresh()
+    end)
+  end,
+})
