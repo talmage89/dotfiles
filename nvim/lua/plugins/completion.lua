@@ -13,7 +13,11 @@ return {
     completion = {
       accept = { auto_brackets = { enabled = true } },
       documentation = { auto_show = true, auto_show_delay_ms = 200 },
-      ghost_text = { enabled = true },
+      ghost_text = {
+        enabled = function()
+          return vim.bo.filetype ~= "markdown"
+        end,
+      },
       menu = {
         border = "rounded",
         auto_show = function(ctx)
