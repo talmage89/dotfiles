@@ -15,6 +15,7 @@ return {
     opts = {
       ensure_installed = {
         "vtsls",
+        "eslint-lsp",
         "json-lsp",
         "bash-language-server",
         "marksman",
@@ -119,7 +120,7 @@ return {
         },
       })
 
-      vim.lsp.enable({ "vtsls", "jsonls", "bashls", "marksman" })
+      vim.lsp.enable({ "vtsls", "eslint", "jsonls", "bashls", "marksman" })
     end,
   },
 }
