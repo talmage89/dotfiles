@@ -13,3 +13,6 @@
 
 # Backup files
 *.bak
+
+# Misc
+**/.DS_Store
