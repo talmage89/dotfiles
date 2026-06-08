@@ -25,10 +25,6 @@ return {
       diff_buf_win_enter = function(bufnr, winid, ctx)
         vim.wo[winid].foldenable = false
         vim.wo[winid].foldcolumn = "0"
-        vim.keymap.set("n", "gd", function()
-          vim.cmd("tab split")
-          vim.lsp.buf.definition()
-        end, { buffer = bufnr, desc = "LSP: definition (new tab)" })
         local sym = ctx and ctx.symbol
         local extra
         if sym == "a" then
