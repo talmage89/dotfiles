@@ -19,6 +19,7 @@ return {
         "json-lsp",
         "bash-language-server",
         "marksman",
+        "prisma-language-server",
       },
       auto_update = false,
       run_on_start = true,
@@ -120,7 +121,7 @@ return {
         },
       })
 
-      vim.lsp.enable({ "vtsls", "eslint", "jsonls", "bashls", "marksman" })
+      vim.lsp.enable({ "vtsls", "eslint", "jsonls", "bashls", "marksman", "prismals" })
     end,
   },
 }

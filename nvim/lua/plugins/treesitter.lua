@@ -27,6 +27,7 @@ return {
       "yaml",
       "toml",
       "regex",
+      "prisma",
       "xml",
       "html",
       "css",
