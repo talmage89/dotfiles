@@ -23,10 +23,10 @@ return {
 
     local set_hl = vim.api.nvim_set_hl
 
-    set_hl(0, "DiffAdd", { bg = "#1a2f1a" })
-    set_hl(0, "DiffDelete", { bg = "#2f1a1a" })
-    set_hl(0, "DiffTextAsAdd", { bg = "#2a6a2a" })
-    set_hl(0, "DiffTextAsDelete", { bg = "#6a2a2a" })
+    set_hl(0, "DiffAdd", { bg = "#1a2a1a" })
+    set_hl(0, "DiffDelete", { bg = "#2a1a1a" })
+    set_hl(0, "DiffTextAsAdd", { bg = "#2d4a2d" })
+    set_hl(0, "DiffTextAsDelete", { bg = "#4a2d2d" })
     set_hl(0, "TabLine", { fg = "#6C7086", bg = "NONE" })
     set_hl(0, "TabLineSel", { fg = "#c4b28a", bg = "NONE", bold = true, italic = true })
     set_hl(0, "TabLineFill", { bg = "NONE" })
