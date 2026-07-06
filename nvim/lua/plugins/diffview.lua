@@ -1,3 +1,19 @@
+local function toggle_focus()
+  vim.g.diffview_focused = not vim.g.diffview_focused
+  local focused = vim.g.diffview_focused
+  for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+    if vim.wo[win].diff then
+      vim.wo[win].foldenable = focused
+      vim.wo[win].foldcolumn = focused and "1" or "0"
+      if focused then
+        vim.wo[win].foldlevel = 0
+      end
+    end
+  end
+  vim.cmd("diffupdate")
+  vim.notify("Diff: " .. (focused and "focused" or "full context"))
+end
+
 return {
   "sindrets/diffview.nvim",
   cmd = {
@@ -23,8 +39,12 @@ return {
     enhanced_diff_hl = true,
     hooks = {
       diff_buf_win_enter = function(_, winid, ctx)
-        vim.wo[winid].foldenable = false
-        vim.wo[winid].foldcolumn = "0"
+        local focused = vim.g.diffview_focused or false
+        vim.wo[winid].foldenable = focused
+        vim.wo[winid].foldcolumn = focused and "1" or "0"
+        if focused then
+          vim.wo[winid].foldlevel = 0
+        end
         local sym = ctx and ctx.symbol
         local extra
         if sym == "a" then
@@ -51,6 +71,7 @@ return {
       view = {
         { "n", "q", "<cmd>DiffviewClose<CR>", { desc = "Close diffview" } },
         { "n", "<Tab>", "<cmd>DiffviewToggleFiles<CR>", { desc = "Toggle file panel" } },
+        { "n", "<leader>gf", toggle_focus, { desc = "Diff: toggle focused/full" } },
       },
       file_panel = {
         { "n", "q", "<cmd>DiffviewClose<CR>", { desc = "Close diffview" } },
