@@ -5,13 +5,25 @@ return {
   opts = {
     picker = {
       ui_select = true,
+      actions = {
+        select_inverse = function(picker)
+          local list = picker.list
+          list:set_selected(vim.tbl_filter(function(item)
+            return not list:is_selected(item)
+          end, list.items))
+        end,
+      },
       win = {
         input = {
           keys = {
             ["<Esc>"] = { "close", mode = { "n", "i" } },
             ["<M-BS>"] = { "<c-s-w>", mode = "i", expr = true, desc = "Delete word (Opt+BS)" },
             ["<C-u>"]  = { "<c-s-u>", mode = "i", expr = true, desc = "Delete to start (Cmd+BS)" },
+            ["<M-a>"] = { "select_inverse", mode = { "i", "n" }, desc = "Invert selection" },
           },
+        },
+        list = {
+          keys = { ["<M-a>"] = "select_inverse" },
         },
       },
     },
