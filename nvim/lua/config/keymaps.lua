@@ -24,7 +24,7 @@ map("n", "N", "Nzzzv", { desc = "Prev match, centered" })
 
 map("n", "<leader>bn", "<cmd>bnext<CR>", { desc = "Next buffer" })
 map("n", "<leader>bp", "<cmd>bprevious<CR>", { desc = "Previous buffer" })
-map("n", "<leader>bd", "<cmd>bdelete<CR>", { desc = "Delete buffer" })
+-- <leader>bd lives in plugins/picker.lua (Snacks.bufdelete preserves window layout)
 
 map("i", "<M-BS>", "<C-w>", { desc = "Delete word backward (Opt+BS)" })
 map("c", "<M-BS>", "<C-w>", { desc = "Delete word backward (Opt+BS)" })

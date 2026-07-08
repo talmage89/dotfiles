@@ -23,6 +23,7 @@ return {
     { "<leader>fF", function() Snacks.picker.files({ hidden = true, ignored = true }) end, desc = "Find files (incl. ignored)" },
     { "<leader>fr", function() Snacks.picker.recent() end, desc = "Recent files" },
     { "<leader>fb", function() Snacks.picker.buffers() end, desc = "Buffers" },
+    { "<leader>bd", function() Snacks.bufdelete() end, desc = "Delete buffer (keep layout)" },
     { "<leader>fg", function() Snacks.picker.grep() end, desc = "Grep workspace" },
     { "<leader>f/", function() Snacks.picker.lines() end, desc = "Grep current buffer" },
     { "<leader>fw", function() Snacks.picker.grep_word() end, mode = { "n", "x" }, desc = "Grep word under cursor" },
