@@ -26,6 +26,31 @@ map("n", "<leader>bn", "<cmd>bnext<CR>", { desc = "Next buffer" })
 map("n", "<leader>bp", "<cmd>bprevious<CR>", { desc = "Previous buffer" })
 -- <leader>bd lives in plugins/picker.lua (Snacks.bufdelete preserves window layout)
 
+local function send_buffer_to_other_window()
+  local wins = vim.tbl_filter(function(w)
+    return vim.api.nvim_win_get_config(w).relative == "" -- ignore floating windows
+  end, vim.api.nvim_tabpage_list_wins(0))
+  if #wins < 2 then
+    vim.notify("No other window to send to", vim.log.levels.WARN)
+    return
+  end
+  local win = vim.api.nvim_get_current_win()
+  local buf = vim.api.nvim_get_current_buf()
+  local alt = vim.fn.bufnr("#")
+  if alt > 0 and alt ~= buf and vim.fn.buflisted(alt) == 1 then
+    vim.api.nvim_win_set_buf(win, alt)
+  else
+    vim.cmd("bprevious")
+  end
+  vim.cmd("wincmd p")
+  if vim.api.nvim_get_current_win() == win then
+    vim.cmd("wincmd w")
+  end
+  vim.api.nvim_set_current_buf(buf)
+end
+
+map("n", "<leader>bs", send_buffer_to_other_window, { desc = "Send buffer to other split, restore previous here" })
+
 map("i", "<M-BS>", "<C-w>", { desc = "Delete word backward (Opt+BS)" })
 map("c", "<M-BS>", "<C-w>", { desc = "Delete word backward (Opt+BS)" })
 
