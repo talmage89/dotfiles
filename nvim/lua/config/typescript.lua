@@ -116,5 +116,7 @@ map("n", "]q", "<cmd>cnext<CR>zz", { desc = "Next quickfix item" })
 map("n", "[q", "<cmd>cprevious<CR>zz", { desc = "Prev quickfix item" })
 map("n", "]Q", "<cmd>clast<CR>zz", { desc = "Last quickfix item" })
 map("n", "[Q", "<cmd>cfirst<CR>zz", { desc = "First quickfix item" })
+map("n", "]<C-q>", "<cmd>cnewer<CR>", { desc = "Newer quickfix list" })
+map("n", "[<C-q>", "<cmd>colder<CR>", { desc = "Older quickfix list" })
 
 return M
