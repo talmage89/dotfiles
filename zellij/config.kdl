@@ -68,3 +68,18 @@ theme "obsidian"
 // Fixes garbled escape sequences in Claude Code and other TUI apps
 support_kitty_keyboard_protocol true
 show_startup_tips false
+
+// Every session uses this one custom layout (layouts/base.kdl). Named
+// "base" rather than "default" on purpose: the session-manager's new-session
+// layout picker lists a built-in "default" too, and a file also named
+// "default" ties with it for the pre-selected top slot (the built-in wins).
+// A unique name wins first place outright, so creating a session is just
+// name -> Enter -> Enter with no layout navigation.
+default_layout "base"
+
+// Sessions are named domains, not saved state: always land in "main",
+// attach to it if it is already running, and never serialize sessions
+// for resurrection.
+session_name "main"
+attach_to_session true
+session_serialization false
