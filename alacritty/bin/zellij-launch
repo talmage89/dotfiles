@@ -1,0 +1,29 @@
+#!/bin/bash
+# Launched by Alacritty as its shell (see alacritty.toml [terminal.shell]).
+# Decides how a new window enters Zellij:
+#   - "main" already running -> open the reusable "welcome" chooser session,
+#     so a fresh window branches off instead of mirroring the live main.
+#   - otherwise              -> create or enter "main".
+# Keys off whether main is *running*, not whether it has a client attached:
+# Zellij's CLI exposes no per-client state, and this matches a workflow that
+# kills sessions rather than detaching them.
+set -eu
+
+ZELLIJ=/opt/homebrew/bin/zellij
+
+sessions=$("$ZELLIJ" list-sessions --no-formatting --short 2>/dev/null || true)
+
+if grep -qx main <<<"$sessions"; then
+    if grep -qx welcome <<<"$sessions"; then
+        exec "$ZELLIJ" attach welcome
+    else
+        # --new-session-with-layout (not --layout): with an explicit
+        # --session name, --layout would try to add a tab to an existing
+        # session and error when it does not exist. -n always creates.
+        exec "$ZELLIJ" --session welcome --new-session-with-layout welcome
+    fi
+else
+    # main does not exist yet -> create it rooted at the platform repo.
+    cd "$HOME/code/platform/paramify" 2>/dev/null || cd "$HOME"
+    exec "$ZELLIJ" attach --create main
+fi
