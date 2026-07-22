@@ -14,6 +14,47 @@ local function toggle_focus()
   vim.notify("Diff: " .. (focused and "focused" or "full context"))
 end
 
+local function diff_grep(pattern)
+  local view = require("diffview.lib").get_current_view()
+  -- -U0 so only changed lines are searched, never context lines
+  local cmd = { "git", "diff", "-U0", "--no-color" }
+  if view and view.rev_arg then
+    for word in view.rev_arg:gmatch("%S+") do
+      table.insert(cmd, word)
+    end
+  end
+  local items, file, lnum = {}, nil, 0
+  for _, line in ipairs(vim.fn.systemlist(cmd)) do
+    local f = line:match("^%+%+%+ b/(.+)")
+    local hunk = line:match("^@@ %-%d+,?%d* %+(%d+)")
+    if f then
+      file = f
+    elseif hunk then
+      lnum = tonumber(hunk)
+    elseif file and line:match("^%+") then
+      local text = line:sub(2)
+      if text:find(pattern, 1, true) then
+        items[#items + 1] = { filename = file, lnum = lnum, text = text }
+      end
+      lnum = lnum + 1
+    end
+  end
+  if #items == 0 then
+    vim.notify("DiffGrep: no matches for '" .. pattern .. "'")
+    return
+  end
+  vim.fn.setqflist({}, " ", { title = "DiffGrep: " .. pattern, items = items })
+  vim.cmd("copen")
+end
+
+local function diff_grep_prompt()
+  vim.ui.input({ prompt = "DiffGrep: " }, function(input)
+    if input and input ~= "" then
+      diff_grep(input)
+    end
+  end)
+end
+
 return {
   "sindrets/diffview.nvim",
   cmd = {
@@ -72,9 +113,11 @@ return {
         { "n", "q", "<cmd>DiffviewClose<CR>", { desc = "Close diffview" } },
         { "n", "<Tab>", "<cmd>DiffviewToggleFiles<CR>", { desc = "Toggle file panel" } },
         { "n", "<leader>gf", toggle_focus, { desc = "Diff: toggle focused/full" } },
+        { "n", "<leader>g/", diff_grep_prompt, { desc = "Diff: grep changed lines" } },
       },
       file_panel = {
         { "n", "q", "<cmd>DiffviewClose<CR>", { desc = "Close diffview" } },
+        { "n", "<leader>g/", diff_grep_prompt, { desc = "Diff: grep changed lines" } },
       },
       file_history_panel = {
         { "n", "q", "<cmd>DiffviewClose<CR>", { desc = "Close diffview" } },
@@ -84,5 +127,8 @@ return {
   config = function(_, opts)
     require("patches.diffview")()
     require("diffview").setup(opts)
+    vim.api.nvim_create_user_command("DiffGrep", function(o)
+      diff_grep(o.args)
+    end, { nargs = 1, desc = "Grep added lines in the current diff" })
   end,
 }
