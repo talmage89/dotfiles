@@ -14,10 +14,33 @@ local function toggle_focus()
   vim.notify("Diff: " .. (focused and "focused" or "full context"))
 end
 
+local function find_entry(view, path)
+  for _, entry in view.files:iter() do
+    if entry.path == path then
+      return entry
+    end
+  end
+end
+
+local function jump_in_view(view, entry, line, col)
+  local dva = require("diffview.async")
+  dva.void(function()
+    dva.await(view:set_file(entry, true, true))
+    -- feedkeys, not norm!/win_set_cursor: only real input processing triggers
+    -- 'cursorbind', which drags the old panel to the diff-aligned line
+    vim.api.nvim_feedkeys(("%dG%d|zvzz"):format(line, math.max(col or 1, 1)), "nx", false)
+  end)()
+end
+
 local function diff_grep(pattern)
   local view = require("diffview.lib").get_current_view()
+  if view and not view.files then
+    view = nil
+  end
+  local toplevel = view and view.adapter.ctx.toplevel
+    or vim.trim(vim.fn.system({ "git", "rev-parse", "--show-toplevel" }))
   -- -U0 so only changed lines are searched, never context lines
-  local cmd = { "git", "diff", "-U0", "--no-color" }
+  local cmd = { "git", "-C", toplevel, "diff", "-U0", "--no-color" }
   if view and view.rev_arg then
     for word in view.rev_arg:gmatch("%S+") do
       table.insert(cmd, word)
@@ -33,8 +56,15 @@ local function diff_grep(pattern)
       lnum = tonumber(hunk)
     elseif file and line:match("^%+") then
       local text = line:sub(2)
-      if text:find(pattern, 1, true) then
-        items[#items + 1] = { filename = file, lnum = lnum, text = text }
+      local col = text:find(pattern, 1, true)
+      if col then
+        items[#items + 1] = {
+          text = ("%s:%d:%s"):format(file, lnum, text),
+          file = file,
+          pos = { lnum, col - 1 },
+          line = text,
+          cwd = toplevel,
+        }
       end
       lnum = lnum + 1
     end
@@ -43,8 +73,25 @@ local function diff_grep(pattern)
     vim.notify("DiffGrep: no matches for '" .. pattern .. "'")
     return
   end
-  vim.fn.setqflist({}, " ", { title = "DiffGrep: " .. pattern, items = items })
-  vim.cmd("copen")
+  Snacks.picker({
+    title = "DiffGrep: " .. pattern,
+    items = items,
+    format = "file",
+    confirm = function(picker, item)
+      picker:close()
+      if not item then
+        return
+      end
+      local entry = view and find_entry(view, item.file)
+      vim.schedule(function()
+        if entry then
+          jump_in_view(view, entry, item.pos[1], item.pos[2] + 1)
+        else
+          vim.cmd(("edit +%d %s"):format(item.pos[1], vim.fn.fnameescape(vim.fs.joinpath(item.cwd, item.file))))
+        end
+      end)
+    end,
+  })
 end
 
 local function diff_grep_prompt()
@@ -53,6 +100,37 @@ local function diff_grep_prompt()
       diff_grep(input)
     end
   end)
+end
+
+local function goto_definition()
+  if #vim.lsp.get_clients({ bufnr = 0 }) == 0 then
+    vim.cmd("norm! gd")
+    return
+  end
+  local view = require("diffview.lib").get_current_view()
+  if not (view and view.files) then
+    return vim.lsp.buf.definition()
+  end
+  vim.lsp.buf.definition({
+    on_list = function(opts)
+      local target = opts.items[1]
+      if not target then
+        return
+      end
+      if #opts.items > 1 then
+        vim.notify(("gd: %d definitions, jumping to first"):format(#opts.items))
+      end
+      local rel = vim.fs.relpath(view.adapter.ctx.toplevel, vim.fs.normalize(target.filename))
+      local entry = rel and find_entry(view, rel)
+      if entry then
+        jump_in_view(view, entry, target.lnum, target.col)
+      else
+        vim.cmd(("tab drop %s"):format(vim.fn.fnameescape(target.filename)))
+        pcall(vim.api.nvim_win_set_cursor, 0, { target.lnum, math.max(target.col - 1, 0) })
+        vim.cmd("norm! zvzz")
+      end
+    end,
+  })
 end
 
 return {
@@ -79,7 +157,22 @@ return {
     },
     enhanced_diff_hl = true,
     hooks = {
-      diff_buf_win_enter = function(_, winid, ctx)
+      diff_buf_win_enter = function(bufnr, winid, ctx)
+        -- gd set here, not in keymaps.view: diffview *deletes* (not restores)
+        -- view keymaps on detach, which would strip the LspAttach gd from the
+        -- real buffer. This mapping degrades to plain LSP definition outside
+        -- a view, so it can safely persist on the buffer.
+        if not vim.b[bufnr].diffview_gd then
+          vim.b[bufnr].diffview_gd = true
+          local set_gd = function()
+            vim.keymap.set("n", "gd", goto_definition, { buffer = bufnr, desc = "LSP: definition (diff-aware)" })
+          end
+          set_gd()
+          -- when the buffer first opens inside the view, lsp.lua's LspAttach
+          -- fires after this hook and its plain gd would win; this autocmd is
+          -- created later than lsp.lua's, so it runs after and re-applies ours
+          vim.api.nvim_create_autocmd("LspAttach", { buffer = bufnr, callback = set_gd })
+        end
         local focused = vim.g.diffview_focused or false
         vim.wo[winid].foldenable = focused
         vim.wo[winid].foldcolumn = focused and "1" or "0"
