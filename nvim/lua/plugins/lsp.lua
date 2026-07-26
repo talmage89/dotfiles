@@ -16,6 +16,7 @@ return {
       ensure_installed = {
         "vtsls",
         "eslint-lsp",
+        "biome",
         "json-lsp",
         "bash-language-server",
         "marksman",
@@ -122,7 +123,9 @@ return {
         },
       })
 
-      vim.lsp.enable({ "vtsls", "eslint", "jsonls", "bashls", "marksman", "prismals", "omnisharp" })
+      -- eslint and biome each attach only where their own config file exists,
+      -- so enabling both keeps work (eslint) and personal (biome) repos apart.
+      vim.lsp.enable({ "vtsls", "eslint", "biome", "jsonls", "bashls", "marksman", "prismals", "omnisharp" })
     end,
   },
 }

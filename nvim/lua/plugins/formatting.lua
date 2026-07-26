@@ -1,3 +1,22 @@
+-- Work repos use eslint + prettier, personal repos use biome. Resolve per
+-- buffer so the same config serves both with no manual switch.
+local function uses_biome(bufnr)
+  local cached = vim.b[bufnr].uses_biome
+  if cached ~= nil then
+    return cached
+  end
+  local found = vim.fs.root(bufnr, { "biome.json", "biome.jsonc" }) ~= nil
+  vim.b[bufnr].uses_biome = found
+  return found
+end
+
+---@param fallback string[] formatters to use when the project has no biome config
+local function biome_or(fallback)
+  return function(bufnr)
+    return uses_biome(bufnr) and { "biome-check" } or fallback
+  end
+end
+
 return {
   "stevearc/conform.nvim",
   event = { "BufWritePre" },
@@ -22,16 +41,17 @@ return {
   },
   opts = {
     formatters_by_ft = {
-      typescript = { "eslint_d", "prettierd" },
-      typescriptreact = { "eslint_d", "prettierd" },
-      javascript = { "eslint_d", "prettierd" },
-      javascriptreact = { "eslint_d", "prettierd" },
-      json = { "prettierd" },
-      jsonc = { "prettierd" },
+      typescript = biome_or({ "eslint_d", "prettierd" }),
+      typescriptreact = biome_or({ "eslint_d", "prettierd" }),
+      javascript = biome_or({ "eslint_d", "prettierd" }),
+      javascriptreact = biome_or({ "eslint_d", "prettierd" }),
+      json = biome_or({ "prettierd" }),
+      jsonc = biome_or({ "prettierd" }),
+      css = biome_or({ "prettierd" }),
+      -- biome handles neither markdown nor yaml
       markdown = { "prettierd" },
       yaml = { "prettierd" },
       html = { "prettierd" },
-      css = { "prettierd" },
       lua = { "stylua" },
     },
     format_on_save = function(bufnr)
