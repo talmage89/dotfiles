@@ -53,6 +53,22 @@ return {
       yaml = { "prettierd" },
       html = { "prettierd" },
       lua = { "stylua" },
+      cs = { "csharpier" },
+    },
+    formatters = {
+      -- conform's builtin targets the csharpier >= 0.30 CLI
+      -- (`format --stdin-path`); projects pinning 0.28.x in
+      -- .config/dotnet-tools.json need `--write-stdout` instead.
+      csharpier = {
+        command = "dotnet",
+        args = { "csharpier", "--write-stdout" },
+        stdin = true,
+        cwd = function(_, ctx)
+          return vim.fs.root(ctx.dirname, function(name)
+            return name == "global.json" or name:match("%.sln$") ~= nil
+          end)
+        end,
+      },
     },
     format_on_save = function(bufnr)
       if vim.g.disable_autoformat or vim.b[bufnr].disable_autoformat then
