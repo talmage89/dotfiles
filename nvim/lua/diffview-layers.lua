@@ -76,6 +76,7 @@ function M.assign(count)
   end
   db[key] = next(layers) and layers or nil
   save_db(db)
+  M.refresh_winbar()
 end
 
 local function ring_numbers(layers)
@@ -129,7 +130,9 @@ local function open_position(view, layers, pos)
   local new_view = require("diffview.lib").get_current_view()
   if new_view then
     new_view.__layer_pos = pos
+    new_view.__layer_label = ("%s [%d/%d]"):format(label, pos + 1, #nums + 2)
   end
+  M.refresh_winbar()
   vim.notify("Layers: " .. label)
 end
 
@@ -179,7 +182,43 @@ function M.reset()
   local db = load_db()
   db[key_for(view)] = nil
   save_db(db)
+  M.refresh_winbar()
   vim.notify("Layers: assignments cleared")
+end
+
+---Show the current layer position in the file panel's winbar. No-op
+---(cleared) when the repo+branch has no rings.
+function M.refresh_winbar()
+  vim.schedule(function()
+    local view = require("diffview.lib").get_current_view()
+    if not (view and view.files and view.panel and view.panel:is_open()) then
+      return
+    end
+    local win = view.panel.winid
+    if not (win and vim.api.nvim_win_is_valid(win)) then
+      return
+    end
+    local layers = load_db()[key_for(view)]
+    if not layers then
+      vim.wo[win].winbar = ""
+      return
+    end
+    local label = view.__layer_label or ("all files [1/%d]"):format(#ring_numbers(layers) + 2)
+    vim.wo[win].winbar = "%#DiffviewFilePanelTitle# Layers %*" .. label
+  end)
+end
+
+---Keep the winbar alive across panel toggles and fresh view opens; called
+---once from the diffview spec's config.
+function M.attach()
+  vim.api.nvim_create_autocmd("BufWinEnter", {
+    group = vim.api.nvim_create_augroup("DiffviewLayers", { clear = true }),
+    callback = function(ev)
+      if vim.bo[ev.buf].filetype == "DiffviewFiles" then
+        M.refresh_winbar()
+      end
+    end,
+  })
 end
 
 return M

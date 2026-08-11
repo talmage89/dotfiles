@@ -245,6 +245,7 @@ return {
   config = function(_, opts)
     require("patches.diffview")()
     require("diffview").setup(opts)
+    require("diffview-layers").attach()
     vim.api.nvim_create_user_command("DiffGrep", function(o)
       diff_grep(o.args)
     end, { nargs = 1, desc = "Grep added lines in the current diff" })
