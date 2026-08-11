@@ -102,8 +102,17 @@ local function diff_grep_prompt()
   end)
 end
 
+local function layer_toggle()
+  require("diffview-layers").toggle()
+end
+
 local function layer_assign()
-  require("diffview-layers").assign(vim.v.count)
+  local layers = require("diffview-layers")
+  if layers.is_armed() then
+    layers.assign(vim.v.count)
+  else
+    require("diffview.actions").open_commit_log()
+  end
 end
 
 local function layer_next()
@@ -166,6 +175,7 @@ return {
     { "<leader>gH", "<cmd>DiffviewFileHistory<CR>", desc = "Diff: history (branch)" },
     { "<leader>gm", "<cmd>DiffviewOpen origin/main...HEAD<CR>", desc = "Diff: branch vs origin/main" },
     { "<leader>gM", "<cmd>DiffviewOpen origin/master...HEAD<CR>", desc = "Diff: branch vs origin/master" },
+    { "<leader>gl", layer_toggle, desc = "Diff: layered review" },
   },
   opts = {
     default_args = {
@@ -223,7 +233,8 @@ return {
         { "n", "<Tab>", "<cmd>DiffviewToggleFiles<CR>", { desc = "Toggle file panel" } },
         { "n", "<leader>gf", toggle_focus, { desc = "Diff: toggle focused/full" } },
         { "n", "<leader>g/", diff_grep_prompt, { desc = "Diff: grep changed lines" } },
-        -- overrides diffview's default L (open_commit_log)
+        { "n", "<leader>gl", layer_toggle, { desc = "Diff: toggle layered review" } },
+        -- L keeps its stock diffview behavior (open_commit_log) until armed
         { "n", "L", layer_assign, { desc = "Diff: assign file to ring [count]" } },
         { "n", "]l", layer_next, { desc = "Diff: next layer (outward)" } },
         { "n", "[l", layer_prev, { desc = "Diff: prev layer (inward)" } },
@@ -232,6 +243,7 @@ return {
       file_panel = {
         { "n", "q", "<cmd>DiffviewClose<CR>", { desc = "Close diffview" } },
         { "n", "<leader>g/", diff_grep_prompt, { desc = "Diff: grep changed lines" } },
+        { "n", "<leader>gl", layer_toggle, { desc = "Diff: toggle layered review" } },
         { "n", "L", layer_assign, { desc = "Diff: assign file to ring [count]" } },
         { "n", "]l", layer_next, { desc = "Diff: next layer (outward)" } },
         { "n", "[l", layer_prev, { desc = "Diff: prev layer (inward)" } },

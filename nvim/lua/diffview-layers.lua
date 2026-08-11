@@ -3,6 +3,12 @@
 -- shows only its own files, and everything unassigned forms the outermost
 -- "periphery" ring. Assignments persist per repo+branch across sessions.
 --
+-- The mode is opt-in per view: nothing here activates until toggle() arms
+-- the current diffview (bound to <leader>gl). Unarmed views keep stock
+-- diffview behavior — no winbar, no ring keys. Armed state is the
+-- presence of `view.__layer_pos`, which cycling stamps onto every view it
+-- reopens, so the mode follows the review until toggled off.
+--
 -- Pathspecs are passed as absolute paths: diffview joins *relative* path
 -- args onto the cwd, which corrupts them whenever cwd ~= toplevel, while
 -- absolute ones pass through untouched. Git accepts absolute paths inside
@@ -51,10 +57,24 @@ local function key_for(view)
   return toplevel .. "::" .. branch
 end
 
+local function get_armed_view()
+  local view = get_view()
+  if view and not view.__layer_pos then
+    vim.notify("Layers: off — <leader>gl to start layered review")
+    return nil
+  end
+  return view
+end
+
+function M.is_armed()
+  local view = require("diffview.lib").get_current_view()
+  return view ~= nil and view.__layer_pos ~= nil
+end
+
 ---Assign the file under the cursor to ring `count` (default 1 = core).
 ---Assigning a file to the ring it is already in unassigns it.
 function M.assign(count)
-  local view = get_view()
+  local view = get_armed_view()
   if not view then
     return
   end
@@ -138,7 +158,7 @@ end
 
 ---Step `dir` (+1 outward / -1 inward) through the layer cycle, wrapping.
 function M.cycle(dir)
-  local view = get_view()
+  local view = get_armed_view()
   if not view then
     return
   end
@@ -148,11 +168,11 @@ function M.cycle(dir)
     return
   end
   local seq_len = #ring_numbers(layers) + 2
-  open_position(view, layers, ((view.__layer_pos or 0) + dir) % seq_len)
+  open_position(view, layers, (view.__layer_pos + dir) % seq_len)
 end
 
 function M.list()
-  local view = get_view()
+  local view = get_armed_view()
   if not view then
     return
   end
@@ -186,8 +206,47 @@ function M.reset()
   vim.notify("Layers: assignments cleared")
 end
 
----Show the current layer position in the file panel's winbar. No-op
----(cleared) when the repo+branch has no rings.
+---Toggle layered review for the current diffview, opening a working-tree
+---view first when none is open. Disarming from a filtered ring reopens
+---the full diff.
+function M.toggle()
+  local lib = require("diffview.lib")
+  local view = lib.get_current_view()
+  if view and not view.files then
+    view = nil
+  end
+  if not view then
+    vim.cmd("DiffviewOpen")
+    view = lib.get_current_view()
+    if not view then
+      return
+    end
+  end
+  if view.__layer_pos then
+    local pos = view.__layer_pos
+    view.__layer_pos = nil
+    view.__layer_label = nil
+    if pos > 0 then
+      local args = {}
+      if view.rev_arg then
+        for word in view.rev_arg:gmatch("%S+") do
+          args[#args + 1] = word
+        end
+      end
+      vim.cmd("DiffviewClose")
+      require("diffview").open(args)
+    end
+    M.refresh_winbar()
+    vim.notify("Layers: off")
+  else
+    view.__layer_pos = 0
+    M.refresh_winbar()
+    vim.notify("Layers: on")
+  end
+end
+
+---Show the layer position in the file panel's winbar of an armed view;
+---cleared everywhere else.
 function M.refresh_winbar()
   vim.schedule(function()
     local view = require("diffview.lib").get_current_view()
@@ -198,12 +257,14 @@ function M.refresh_winbar()
     if not (win and vim.api.nvim_win_is_valid(win)) then
       return
     end
-    local layers = load_db()[key_for(view)]
-    if not layers then
+    if not view.__layer_pos then
       vim.wo[win].winbar = ""
       return
     end
-    local label = view.__layer_label or ("all files [1/%d]"):format(#ring_numbers(layers) + 2)
+    local layers = load_db()[key_for(view)]
+    local label = not layers and "no rings assigned"
+      or view.__layer_label
+      or ("all files [1/%d]"):format(#ring_numbers(layers) + 2)
     vim.wo[win].winbar = "%#DiffviewFilePanelTitle# Layers %*" .. label
   end)
 end
