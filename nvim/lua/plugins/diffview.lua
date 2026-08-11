@@ -102,6 +102,22 @@ local function diff_grep_prompt()
   end)
 end
 
+local function layer_assign()
+  require("diffview-layers").assign(vim.v.count)
+end
+
+local function layer_next()
+  require("diffview-layers").cycle(1)
+end
+
+local function layer_prev()
+  require("diffview-layers").cycle(-1)
+end
+
+local function layer_list()
+  require("diffview-layers").list()
+end
+
 local function goto_definition()
   if #vim.lsp.get_clients({ bufnr = 0 }) == 0 then
     vim.cmd("norm! gd")
@@ -207,10 +223,19 @@ return {
         { "n", "<Tab>", "<cmd>DiffviewToggleFiles<CR>", { desc = "Toggle file panel" } },
         { "n", "<leader>gf", toggle_focus, { desc = "Diff: toggle focused/full" } },
         { "n", "<leader>g/", diff_grep_prompt, { desc = "Diff: grep changed lines" } },
+        -- overrides diffview's default L (open_commit_log)
+        { "n", "L", layer_assign, { desc = "Diff: assign file to ring [count]" } },
+        { "n", "]l", layer_next, { desc = "Diff: next layer (outward)" } },
+        { "n", "[l", layer_prev, { desc = "Diff: prev layer (inward)" } },
+        { "n", "gL", layer_list, { desc = "Diff: list layer assignments" } },
       },
       file_panel = {
         { "n", "q", "<cmd>DiffviewClose<CR>", { desc = "Close diffview" } },
         { "n", "<leader>g/", diff_grep_prompt, { desc = "Diff: grep changed lines" } },
+        { "n", "L", layer_assign, { desc = "Diff: assign file to ring [count]" } },
+        { "n", "]l", layer_next, { desc = "Diff: next layer (outward)" } },
+        { "n", "[l", layer_prev, { desc = "Diff: prev layer (inward)" } },
+        { "n", "gL", layer_list, { desc = "Diff: list layer assignments" } },
       },
       file_history_panel = {
         { "n", "q", "<cmd>DiffviewClose<CR>", { desc = "Close diffview" } },
@@ -223,5 +248,8 @@ return {
     vim.api.nvim_create_user_command("DiffGrep", function(o)
       diff_grep(o.args)
     end, { nargs = 1, desc = "Grep added lines in the current diff" })
+    vim.api.nvim_create_user_command("DiffLayersReset", function()
+      require("diffview-layers").reset()
+    end, { desc = "Clear diff layer assignments for this repo+branch" })
   end,
 }
