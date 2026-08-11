@@ -23,11 +23,13 @@
 --
 --   { "<abs git toplevel>::<branch>": {
 --       "rev": "<DiffviewOpen rev arg>",
---       "files": { "<toplevel-relative path>": ring }
+--       "files": { "<toplevel-relative path>": ring },
+--       "names": { "<ring>": "<display name>" }
 --   } }
 --
 -- where ring is a positive integer (1 = core) and both key parts come
 -- verbatim from `git rev-parse --show-toplevel` / `--abbrev-ref HEAD`.
+-- `names` is optional; an unnamed ring displays as "Ring <n>".
 -- Unlisted files are the periphery; omit a repo's key entirely for an
 -- unlayered diff. `rev` declares what the review diffs against — e.g.
 -- "origin/main...HEAD", "origin/main", or a parent commit sha — and is
@@ -86,6 +88,11 @@ end
 
 local function files_of(entry)
   return entry and entry.files and next(entry.files) and entry.files or nil
+end
+
+local function ring_name(rec, n)
+  local names = rec and rec.names
+  return names and (names[tostring(n)] or names[n]) or ("Ring %d"):format(n)
 end
 
 local function get_armed_view()
@@ -147,13 +154,14 @@ end
 -- The position cycle is: 0 = all (unfiltered), 1..#nums = rings in
 -- ascending order, #nums+1 = periphery. Fresh views carry no stamp and
 -- count as "all"; reopened views are stamped with their position.
-local function open_position(view, layers, pos)
+local function open_position(view, rec, pos)
   local toplevel = view.adapter.ctx.toplevel
+  local layers = rec.files
   local nums = ring_numbers(layers)
   local args = rev_words(view.rev_arg)
-  local label
+  local name, detail
   if pos == 0 then
-    label = "all files"
+    name = "All"
   else
     args[#args + 1] = "--"
     if pos <= #nums then
@@ -164,23 +172,25 @@ local function open_position(view, layers, pos)
           count = count + 1
         end
       end
-      label = ("ring %d (%d file%s)"):format(n, count, count == 1 and "" or "s")
+      name = ring_name(rec, n)
+      detail = ("%d file%s"):format(count, count == 1 and "" or "s")
     else
       for path in pairs(layers) do
         args[#args + 1] = ":(exclude)" .. vim.fs.joinpath(toplevel, path)
       end
-      label = "periphery"
+      name = "Periphery"
     end
   end
+  local label = ("%s (%d/%d)"):format(name, pos + 1, #nums + 2)
   vim.cmd("DiffviewClose")
   require("diffview").open(args)
   local new_view = require("diffview.lib").get_current_view()
   if new_view then
     new_view.__layer_pos = pos
-    new_view.__layer_label = ("%s [%d/%d]"):format(label, pos + 1, #nums + 2)
+    new_view.__layer_label = label
   end
   M.refresh_winbar()
-  vim.notify("Layers: " .. label)
+  vim.notify("Layers: " .. label .. (detail and " — " .. detail or ""))
 end
 
 ---Step `dir` (+1 outward / -1 inward) through the layer cycle, wrapping.
@@ -189,13 +199,13 @@ function M.cycle(dir)
   if not view then
     return
   end
-  local layers = files_of(load_db()[key_for(view)])
-  if not layers then
+  local rec = load_db()[key_for(view)]
+  if not files_of(rec) then
     vim.notify("DiffLayers: nothing assigned — use [count]L on a file first", vim.log.levels.WARN)
     return
   end
-  local seq_len = #ring_numbers(layers) + 2
-  open_position(view, layers, (view.__layer_pos + dir) % seq_len)
+  local seq_len = #ring_numbers(rec.files) + 2
+  open_position(view, rec, (view.__layer_pos + dir) % seq_len)
 end
 
 function M.list()
@@ -203,7 +213,8 @@ function M.list()
   if not view then
     return
   end
-  local layers = files_of(load_db()[key_for(view)])
+  local rec = load_db()[key_for(view)]
+  local layers = files_of(rec)
   if not layers then
     vim.notify("DiffLayers: nothing assigned")
     return
@@ -216,7 +227,7 @@ function M.list()
   local lines = {}
   for _, n in ipairs(ring_numbers(layers)) do
     table.sort(by_ring[n])
-    lines[#lines + 1] = ("ring %d:\n  %s"):format(n, table.concat(by_ring[n], "\n  "))
+    lines[#lines + 1] = ("%s (ring %d):\n  %s"):format(ring_name(rec, n), n, table.concat(by_ring[n], "\n  "))
   end
   vim.notify(table.concat(lines, "\n"))
 end
@@ -288,8 +299,8 @@ function M.refresh_winbar()
     local layers = files_of(load_db()[key_for(view)])
     local label = not layers and "no rings assigned"
       or view.__layer_label
-      or ("all files [1/%d]"):format(#ring_numbers(layers) + 2)
-    vim.wo[win].winbar = "%#DiffviewFilePanelTitle# Layers %*" .. label
+      or ("All (1/%d)"):format(#ring_numbers(layers) + 2)
+    vim.wo[win].winbar = "%#DiffviewFilePanelTitle# " .. label .. "%*"
   end)
 end
 
