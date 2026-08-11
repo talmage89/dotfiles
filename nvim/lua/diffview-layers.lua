@@ -21,12 +21,19 @@
 -- keypress even in a running instance. Schema, at
 -- `stdpath("state")/diff-layers.json`:
 --
---   { "<abs git toplevel>::<branch>": { "<toplevel-relative path>": ring } }
+--   { "<abs git toplevel>::<branch>": {
+--       "rev": "<DiffviewOpen rev arg>",
+--       "files": { "<toplevel-relative path>": ring }
+--   } }
 --
 -- where ring is a positive integer (1 = core) and both key parts come
 -- verbatim from `git rev-parse --show-toplevel` / `--abbrev-ref HEAD`.
 -- Unlisted files are the periphery; omit a repo's key entirely for an
--- unlayered diff.
+-- unlayered diff. `rev` declares what the review diffs against — e.g.
+-- "origin/main...HEAD", "origin/main", or a parent commit sha — and is
+-- used when toggle() has to open the view itself; omit it for the
+-- working tree. Arming an already-open view keeps that view's rev, and
+-- a manual first assignment records the current view's rev as declared.
 
 local M = {}
 
@@ -55,6 +62,30 @@ local function key_for(view)
   local toplevel = view.adapter.ctx.toplevel
   local branch = vim.trim(vim.fn.system({ "git", "-C", toplevel, "rev-parse", "--abbrev-ref", "HEAD" }))
   return toplevel .. "::" .. branch
+end
+
+-- key derived from the cwd, for when no view exists yet
+local function repo_key()
+  local toplevel = vim.trim(vim.fn.system({ "git", "rev-parse", "--show-toplevel" }))
+  if vim.v.shell_error ~= 0 then
+    return nil
+  end
+  local branch = vim.trim(vim.fn.system({ "git", "-C", toplevel, "rev-parse", "--abbrev-ref", "HEAD" }))
+  return toplevel .. "::" .. branch
+end
+
+local function rev_words(rev)
+  local words = {}
+  if rev then
+    for word in rev:gmatch("%S+") do
+      words[#words + 1] = word
+    end
+  end
+  return words
+end
+
+local function files_of(entry)
+  return entry and entry.files and next(entry.files) and entry.files or nil
 end
 
 local function get_armed_view()
@@ -86,15 +117,17 @@ function M.assign(count)
   local ring = math.max(count or 0, 1)
   local key = key_for(view)
   local db = load_db()
-  local layers = db[key] or {}
-  if layers[entry.path] == ring then
-    layers[entry.path] = nil
+  local rec = db[key] or { rev = view.rev_arg, files = {} }
+  local files = rec.files or {}
+  if files[entry.path] == ring then
+    files[entry.path] = nil
     vim.notify(("Layers: %s ⇢ periphery"):format(entry.path))
   else
-    layers[entry.path] = ring
+    files[entry.path] = ring
     vim.notify(("Layers: %s ⇢ ring %d"):format(entry.path, ring))
   end
-  db[key] = next(layers) and layers or nil
+  rec.files = files
+  db[key] = next(files) and rec or nil
   save_db(db)
   M.refresh_winbar()
 end
@@ -116,14 +149,8 @@ end
 -- count as "all"; reopened views are stamped with their position.
 local function open_position(view, layers, pos)
   local toplevel = view.adapter.ctx.toplevel
-  local rev_arg = view.rev_arg
   local nums = ring_numbers(layers)
-  local args = {}
-  if rev_arg then
-    for word in rev_arg:gmatch("%S+") do
-      args[#args + 1] = word
-    end
-  end
+  local args = rev_words(view.rev_arg)
   local label
   if pos == 0 then
     label = "all files"
@@ -162,7 +189,7 @@ function M.cycle(dir)
   if not view then
     return
   end
-  local layers = load_db()[key_for(view)]
+  local layers = files_of(load_db()[key_for(view)])
   if not layers then
     vim.notify("DiffLayers: nothing assigned — use [count]L on a file first", vim.log.levels.WARN)
     return
@@ -176,7 +203,7 @@ function M.list()
   if not view then
     return
   end
-  local layers = load_db()[key_for(view)]
+  local layers = files_of(load_db()[key_for(view)])
   if not layers then
     vim.notify("DiffLayers: nothing assigned")
     return
@@ -216,7 +243,9 @@ function M.toggle()
     view = nil
   end
   if not view then
-    vim.cmd("DiffviewOpen")
+    local key = repo_key()
+    local rec = key and load_db()[key]
+    require("diffview").open(rev_words(rec and rec.rev))
     view = lib.get_current_view()
     if not view then
       return
@@ -227,12 +256,7 @@ function M.toggle()
     view.__layer_pos = nil
     view.__layer_label = nil
     if pos > 0 then
-      local args = {}
-      if view.rev_arg then
-        for word in view.rev_arg:gmatch("%S+") do
-          args[#args + 1] = word
-        end
-      end
+      local args = rev_words(view.rev_arg)
       vim.cmd("DiffviewClose")
       require("diffview").open(args)
     end
@@ -261,7 +285,7 @@ function M.refresh_winbar()
       vim.wo[win].winbar = ""
       return
     end
-    local layers = load_db()[key_for(view)]
+    local layers = files_of(load_db()[key_for(view)])
     local label = not layers and "no rings assigned"
       or view.__layer_label
       or ("all files [1/%d]"):format(#ring_numbers(layers) + 2)
