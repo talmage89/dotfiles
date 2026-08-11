@@ -8,23 +8,31 @@
 -- absolute ones pass through untouched. Git accepts absolute paths inside
 -- `:(exclude)` magic, and a pathspec of only excludes means "everything
 -- else" — which is exactly the periphery.
+--
+-- The state file is the public contract, so external tools (an AI brief,
+-- a script) can seed rings without touching nvim. It is re-read on every
+-- operation — never cached — so a write from outside lands on the next
+-- keypress even in a running instance. Schema, at
+-- `stdpath("state")/diff-layers.json`:
+--
+--   { "<abs git toplevel>::<branch>": { "<toplevel-relative path>": ring } }
+--
+-- where ring is a positive integer (1 = core) and both key parts come
+-- verbatim from `git rev-parse --show-toplevel` / `--abbrev-ref HEAD`.
+-- Unlisted files are the periphery; omit a repo's key entirely for an
+-- unlayered diff.
 
 local M = {}
 
 local state_file = vim.fs.joinpath(vim.fn.stdpath("state"), "diff-layers.json")
 
-local db
-
 local function load_db()
-  if not db then
-    local ok, lines = pcall(vim.fn.readfile, state_file)
-    local ok2, decoded = pcall(vim.json.decode, ok and table.concat(lines, "\n") or "")
-    db = ok2 and decoded or {}
-  end
-  return db
+  local ok, lines = pcall(vim.fn.readfile, state_file)
+  local ok2, decoded = pcall(vim.json.decode, ok and table.concat(lines, "\n") or "")
+  return ok2 and decoded or {}
 end
 
-local function save_db()
+local function save_db(db)
   vim.fn.writefile({ vim.json.encode(db) }, state_file)
 end
 
@@ -57,7 +65,8 @@ function M.assign(count)
   end
   local ring = math.max(count or 0, 1)
   local key = key_for(view)
-  local layers = load_db()[key] or {}
+  local db = load_db()
+  local layers = db[key] or {}
   if layers[entry.path] == ring then
     layers[entry.path] = nil
     vim.notify(("Layers: %s ⇢ periphery"):format(entry.path))
@@ -66,7 +75,7 @@ function M.assign(count)
     vim.notify(("Layers: %s ⇢ ring %d"):format(entry.path, ring))
   end
   db[key] = next(layers) and layers or nil
-  save_db()
+  save_db(db)
 end
 
 local function ring_numbers(layers)
@@ -84,10 +93,9 @@ end
 -- The position cycle is: 0 = all (unfiltered), 1..#nums = rings in
 -- ascending order, #nums+1 = periphery. Fresh views carry no stamp and
 -- count as "all"; reopened views are stamped with their position.
-local function open_position(view, key, pos)
+local function open_position(view, layers, pos)
   local toplevel = view.adapter.ctx.toplevel
   local rev_arg = view.rev_arg
-  local layers = db[key]
   local nums = ring_numbers(layers)
   local args = {}
   if rev_arg then
@@ -131,14 +139,13 @@ function M.cycle(dir)
   if not view then
     return
   end
-  local key = key_for(view)
-  local layers = load_db()[key]
+  local layers = load_db()[key_for(view)]
   if not layers then
     vim.notify("DiffLayers: nothing assigned — use [count]L on a file first", vim.log.levels.WARN)
     return
   end
   local seq_len = #ring_numbers(layers) + 2
-  open_position(view, key, ((view.__layer_pos or 0) + dir) % seq_len)
+  open_position(view, layers, ((view.__layer_pos or 0) + dir) % seq_len)
 end
 
 function M.list()
@@ -169,9 +176,9 @@ function M.reset()
   if not view then
     return
   end
-  local key = key_for(view)
-  load_db()[key] = nil
-  save_db()
+  local db = load_db()
+  db[key_for(view)] = nil
+  save_db(db)
   vim.notify("Layers: assignments cleared")
 end
 
