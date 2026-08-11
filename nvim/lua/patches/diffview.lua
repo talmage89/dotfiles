@@ -17,8 +17,24 @@ local function patch_untracked_files()
   local GitAdapter = require("diffview.vcs.adapters.git").GitAdapter
   local Job = require("diffview.job").Job
   local FileEntry = require("diffview.scene.file_entry").FileEntry
+  local RevType = require("diffview.vcs.rev").RevType
   local utils = require("diffview.utils")
   local await = async.await
+
+  -- Upstream only lists untracked files for index↔worktree views, which
+  -- hides brand-new files from any rev-pinned review (and from diff-layers
+  -- rings). Whenever the right side is the working tree, lift the rev gate;
+  -- range diffs keep upstream behavior.
+  local orig_show_untracked = GitAdapter.show_untracked
+  function GitAdapter:show_untracked(opt)
+    if opt and opt.revs and opt.revs.right.type == RevType.LOCAL then
+      -- tbl_extend can't clear a key (nil overlay values are no-ops), so
+      -- copy and remove the rev gate explicitly
+      opt = vim.tbl_extend("force", {}, opt)
+      opt.revs = nil
+    end
+    return orig_show_untracked(self, opt)
+  end
 
   GitAdapter.untracked_files = async.wrap(function(self, left, right, opt, callback)
     local args = utils.vec_join(self:args(), "-c", "core.quotePath=false", "ls-files", "--others", "--exclude-standard")
@@ -40,6 +56,10 @@ local function patch_untracked_files()
       return
     end
 
+    -- a commit rev can't render a file it never contained; give untracked
+    -- entries an empty left side instead
+    local left_rev = left.type == RevType.STAGE and left or self.Rev.new_null_tree()
+
     local files = {}
     for _, s in ipairs(job.stdout) do
       table.insert(
@@ -50,7 +70,7 @@ local function patch_untracked_files()
           status = "?",
           kind = "working",
           revs = {
-            a = left,
+            a = left_rev,
             b = right,
           },
         })
