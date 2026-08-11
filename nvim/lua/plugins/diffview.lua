@@ -224,7 +224,7 @@ return {
       file_history = { layout = "diff2_horizontal" },
     },
     file_panel = {
-      listing_style = "list",
+      listing_style = "tree",
       win_config = { position = "left", width = 65 },
     },
     keymaps = {
