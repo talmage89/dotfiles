@@ -6,10 +6,66 @@
 --
 -- Upstream PR: https://github.com/sindrets/diffview.nvim/pull/557
 -- Drop this file once that PR lands and the lockfile is bumped past it.
+--
+-- Also override GitAdapter.untracked_files to pass the view's pathspecs to
+-- `ls-files`. Upstream ignores ctx.path_args there, so untracked files leak
+-- into every pathspec-filtered view (which breaks diff-layers rings). Body
+-- copied from upstream with only the path_args lines added.
+
+local function patch_untracked_files()
+  local async = require("diffview.async")
+  local GitAdapter = require("diffview.vcs.adapters.git").GitAdapter
+  local Job = require("diffview.job").Job
+  local FileEntry = require("diffview.scene.file_entry").FileEntry
+  local utils = require("diffview.utils")
+  local await = async.await
+
+  GitAdapter.untracked_files = async.wrap(function(self, left, right, opt, callback)
+    local args = utils.vec_join(self:args(), "-c", "core.quotePath=false", "ls-files", "--others", "--exclude-standard")
+    if next(self.ctx.path_args or {}) then
+      args = utils.vec_join(args, "--", self.ctx.path_args)
+    end
+
+    local job = Job({
+      command = self:bin(),
+      args = args,
+      cwd = self.ctx.toplevel,
+      log_opt = { label = "GitAdapter:untracked_files()" },
+    })
+
+    local ok = await(job)
+
+    if not ok then
+      callback(job.stderr or {}, nil)
+      return
+    end
+
+    local files = {}
+    for _, s in ipairs(job.stdout) do
+      table.insert(
+        files,
+        FileEntry.with_layout(opt.default_layout, {
+          adapter = self,
+          path = s,
+          status = "?",
+          kind = "working",
+          revs = {
+            a = left,
+            b = right,
+          },
+        })
+      )
+    end
+
+    callback(nil, files)
+  end)
+end
 
 return function()
   local PathLib = require("diffview.path").PathLib
   local uv = vim.loop
+
+  patch_untracked_files()
 
   function PathLib:expand(path)
     local segments = self:explode(path)
