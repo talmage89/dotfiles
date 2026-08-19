@@ -22,14 +22,160 @@ local function find_entry(view, path)
   end
 end
 
-local function jump_in_view(view, entry, line, col)
+-- Back-jump history for in-view navigation, keyed by view. The diff windows are
+-- made with `tab split`, so they inherit the jumplist of wherever the view was
+-- opened from, and a native <C-o> would drop a foreign buffer straight into a
+-- diff window: the window falls out of diff mode and the panel keeps pointing at
+-- the file that is no longer on screen. In-view jumps therefore record their
+-- origin here, and <C-o> only falls through to the real jumplist for positions
+-- inside the buffer that is already on screen.
+local rings = setmetatable({}, { __mode = "k" })
+
+local function ring_for(view)
+  local ring = rings[view]
+  if not ring then
+    ring = { back = {}, arrivals = {} }
+    rings[view] = ring
+  end
+  return ring
+end
+
+local function view_position(view)
+  local entry = view.cur_entry
+  if not entry then
+    return nil
+  end
+  local win = vim.api.nvim_get_current_win()
+  if not vim.wo[win].diff then
+    local main = view.cur_layout and view.cur_layout:get_main_win()
+    if not main then
+      return nil
+    end
+    win = main.id
+  end
+  local ok, pos = pcall(vim.api.nvim_win_get_cursor, win)
+  return ok and { path = entry.path, lnum = pos[1], col = pos[2] + 1 } or nil
+end
+
+-- `origin` is the position to record as the jump's origin: nil reads the cursor
+-- now, `false` records nothing (that is what walking back does). Anything routed
+-- through a picker must pass its own, captured before the picker took the cursor.
+local function jump_in_view(view, entry, line, col, origin)
+  local ring = ring_for(view)
+  if ring.busy then
+    return
+  end
+  if origin == nil then
+    origin = view_position(view)
+  end
   local dva = require("diffview.async")
+  ring.busy = true
   dva.void(function()
-    dva.await(view:set_file(entry, true, true))
-    -- feedkeys, not norm!/win_set_cursor: only real input processing triggers
-    -- 'cursorbind', which drags the old panel to the diff-aligned line
-    vim.api.nvim_feedkeys(("%dG%d|zvzz"):format(line, math.max(col or 1, 1)), "nx", false)
+    local ok = true
+    if view.cur_entry ~= entry then
+      ok = pcall(dva.await, view:set_file(entry, true, true))
+    else
+      local main = view.cur_layout and view.cur_layout:get_main_win()
+      if main then
+        pcall(vim.api.nvim_set_current_win, main.id)
+      end
+    end
+    if ok then
+      -- feedkeys, not norm!/win_set_cursor: only real input processing triggers
+      -- 'cursorbind', which drags the old panel to the diff-aligned line
+      vim.api.nvim_feedkeys(("%dG%d|zvzz"):format(line, math.max(col or 1, 1)), "nx", false)
+      if origin then
+        table.insert(ring.back, origin)
+      end
+      -- that G also pushes a jumplist entry for the position we land on; mark it
+      -- so <C-o> steps over it instead of spending a press going nowhere
+      local list = vim.fn.getjumplist()[1]
+      local last = list[#list]
+      if last then
+        ring.arrivals[last.bufnr .. ":" .. last.lnum] = true
+      end
+    end
+    ring.busy = false
   end)()
+end
+
+-- How many real jumplist steps back land on a position inside the buffer this
+-- window already shows. `near` stops at the first arrival marker -- anything
+-- beyond it predates the file on screen, so only the ring can reach it without
+-- breaking the layout. `far` looks past the markers, for when the ring is spent.
+local function native_steps(ring, count)
+  local list, idx = unpack(vim.fn.getjumplist())
+  local bufnr = vim.api.nvim_get_current_buf()
+  local remaining, blocked, near, far = count, false, nil, nil
+  for i = idx, 1, -1 do
+    local e = list[i]
+    if ring.arrivals[e.bufnr .. ":" .. e.lnum] then
+      blocked = true
+    elseif e.bufnr == bufnr then
+      remaining = remaining - 1
+      if remaining == 0 then
+        far = idx - i + 1
+        near = not blocked and far or nil
+        break
+      end
+    end
+  end
+  return near, far
+end
+
+local function jump_back()
+  local view = require("diffview.lib").get_current_view()
+  if not view then
+    return vim.api.nvim_feedkeys(vim.keycode("<C-o>"), "n", false)
+  end
+  local ring = ring_for(view)
+  if ring.busy then
+    return
+  end
+  local near, far = native_steps(ring, vim.v.count1)
+  if near then
+    return vim.api.nvim_feedkeys(near .. vim.keycode("<C-o>"), "nx", false)
+  end
+  while #ring.back > 0 do
+    local pos = table.remove(ring.back)
+    local entry = view.files and find_entry(view, pos.path)
+    if entry then
+      return jump_in_view(view, entry, pos.lnum, pos.col, false)
+    end
+  end
+  if far then
+    return vim.api.nvim_feedkeys(far .. vim.keycode("<C-o>"), "nx", false)
+  end
+  vim.notify("Diff: no earlier position inside this diff")
+end
+
+-- A target outside the diff has no business in a diff window, and a fresh tab
+-- per jump piles them up: land it in the tab the review was opened from, the
+-- same place diffview's own `gf` goes.
+local function jump_outside_view(item, tagname)
+  local tab = require("diffview.lib").get_prev_non_view_tabpage()
+  local edit = "edit " .. vim.fn.fnameescape(item.filename)
+  if tab then
+    vim.api.nvim_set_current_tabpage(tab)
+    -- arrive as a plain jump would in that tab, so <C-o>/<C-t> there lead back
+    -- to what it was showing
+    vim.cmd("normal! m'")
+    if tagname then
+      vim.fn.settagstack(vim.api.nvim_get_current_win(), {
+        items = { { tagname = tagname, from = { vim.fn.bufnr("%"), vim.fn.line("."), vim.fn.col("."), 0 } } },
+      }, "t")
+    end
+    vim.cmd(edit)
+  else
+    vim.cmd("tabnew")
+    local scratch = vim.api.nvim_get_current_buf()
+    vim.cmd("keepalt " .. edit)
+    if scratch ~= vim.api.nvim_get_current_buf() then
+      pcall(vim.api.nvim_buf_delete, scratch, { force = true })
+    end
+  end
+  pcall(vim.api.nvim_win_set_cursor, 0, { item.lnum, math.max((item.col or 1) - 1, 0) })
+  vim.cmd("norm! zvzz")
 end
 
 local function diff_grep(pattern)
@@ -73,6 +219,7 @@ local function diff_grep(pattern)
     vim.notify("DiffGrep: no matches for '" .. pattern .. "'")
     return
   end
+  local origin = view and view_position(view)
   Snacks.picker({
     title = "DiffGrep: " .. pattern,
     items = items,
@@ -84,10 +231,13 @@ local function diff_grep(pattern)
       end
       local entry = view and find_entry(view, item.file)
       vim.schedule(function()
+        local path = vim.fs.joinpath(item.cwd, item.file)
         if entry then
-          jump_in_view(view, entry, item.pos[1], item.pos[2] + 1)
+          jump_in_view(view, entry, item.pos[1], item.pos[2] + 1, origin)
+        elseif view then
+          jump_outside_view({ filename = path, lnum = item.pos[1], col = item.pos[2] + 1 })
         else
-          vim.cmd(("edit +%d %s"):format(item.pos[1], vim.fn.fnameescape(vim.fs.joinpath(item.cwd, item.file))))
+          vim.cmd(("edit +%d %s"):format(item.pos[1], vim.fn.fnameescape(path)))
         end
       end)
     end,
@@ -127,35 +277,87 @@ local function layer_list()
   require("diffview-layers").list()
 end
 
-local function goto_definition()
-  if #vim.lsp.get_clients({ bufnr = 0 }) == 0 then
-    vim.cmd("norm! gd")
-    return
+local function jump_to_item(view, item, tagname, origin)
+  local entry
+  if view.files and view.adapter then
+    local rel = vim.fs.relpath(view.adapter.ctx.toplevel, vim.fs.normalize(item.filename))
+    entry = rel and find_entry(view, rel)
   end
-  local view = require("diffview.lib").get_current_view()
-  if not (view and view.files) then
-    return vim.lsp.buf.definition()
+  if entry then
+    jump_in_view(view, entry, item.lnum, item.col, origin)
+  else
+    jump_outside_view(item, tagname)
   end
-  vim.lsp.buf.definition({
-    on_list = function(opts)
-      local target = opts.items[1]
-      if not target then
+end
+
+local function pick_and_jump(view, items, title, tagname, origin)
+  Snacks.picker({
+    title = title,
+    items = vim.tbl_map(function(item)
+      return {
+        text = ("%s:%d:%s"):format(vim.fn.fnamemodify(item.filename, ":."), item.lnum, item.text or ""),
+        file = item.filename,
+        pos = { item.lnum, math.max((item.col or 1) - 1, 0) },
+        line = item.text,
+      }
+    end, items),
+    format = "file",
+    confirm = function(picker, item)
+      picker:close()
+      if not item then
         return
       end
-      if #opts.items > 1 then
-        vim.notify(("gd: %d definitions, jumping to first"):format(#opts.items))
-      end
-      local rel = vim.fs.relpath(view.adapter.ctx.toplevel, vim.fs.normalize(target.filename))
-      local entry = rel and find_entry(view, rel)
-      if entry then
-        jump_in_view(view, entry, target.lnum, target.col)
-      else
-        vim.cmd(("tab drop %s"):format(vim.fn.fnameescape(target.filename)))
-        pcall(vim.api.nvim_win_set_cursor, 0, { target.lnum, math.max(target.col - 1, 0) })
-        vim.cmd("norm! zvzz")
-      end
+      vim.schedule(function()
+        jump_to_item(view, { filename = item.file, lnum = item.pos[1], col = item.pos[2] + 1 }, tagname, origin)
+      end)
     end,
   })
+end
+
+-- Every LSP jump out of a diff buffer needs the same treatment: stock behavior
+-- edits the target in the current window, which is a diff window.
+local lsp_jumps = {
+  { key = "gd", method = "definition", label = "definition" },
+  { key = "gD", method = "declaration", label = "declaration" },
+  { key = "gi", method = "implementation", label = "implementation" },
+  { key = "gy", method = "type_definition", label = "type definition" },
+  { key = "gr", method = "references", label = "references", pick = true },
+}
+
+local function lsp_jump(spec)
+  return function()
+    if #vim.lsp.get_clients({ bufnr = 0 }) == 0 then
+      -- no server here: let the key mean whatever it means in plain vim
+      return vim.api.nvim_feedkeys(vim.keycode(spec.key), "n", false)
+    end
+    local view = require("diffview.lib").get_current_view()
+    if not view then
+      return vim.lsp.buf[spec.method]()
+    end
+    local tagname = vim.fn.expand("<cword>")
+    local origin = view_position(view)
+    local list_opts = {
+      on_list = function(result)
+        if #result.items > 1 and spec.pick then
+          return pick_and_jump(view, result.items, result.title or spec.label, tagname, origin)
+        end
+        local target = result.items[1]
+        if not target then
+          return
+        end
+        if #result.items > 1 then
+          vim.notify(("%s: %d results, jumping to first"):format(spec.key, #result.items))
+        end
+        jump_to_item(view, target, tagname, origin)
+      end,
+    }
+    if spec.method == "references" then
+      -- references() takes a leading context argument; the others take opts only
+      vim.lsp.buf.references(nil, list_opts)
+    else
+      vim.lsp.buf[spec.method](list_opts)
+    end
+  end
 end
 
 return {
@@ -184,20 +386,33 @@ return {
     enhanced_diff_hl = true,
     hooks = {
       diff_buf_win_enter = function(bufnr, winid, ctx)
-        -- gd set here, not in keymaps.view: diffview *deletes* (not restores)
-        -- view keymaps on detach, which would strip the LspAttach gd from the
-        -- real buffer. This mapping degrades to plain LSP definition outside
-        -- a view, so it can safely persist on the buffer.
-        if not vim.b[bufnr].diffview_gd then
-          vim.b[bufnr].diffview_gd = true
-          local set_gd = function()
-            vim.keymap.set("n", "gd", goto_definition, { buffer = bufnr, desc = "LSP: definition (diff-aware)" })
+        -- LSP jumps set here, not in keymaps.view: diffview *deletes* (not
+        -- restores) view keymaps on detach, which would strip the LspAttach
+        -- mappings from the real buffer. These degrade to the plain LSP jump
+        -- outside a view, so they can safely persist on the buffer.
+        if not vim.b[bufnr].diffview_lsp_jumps then
+          vim.b[bufnr].diffview_lsp_jumps = true
+          local set_jumps = function()
+            for _, spec in ipairs(lsp_jumps) do
+              vim.keymap.set("n", spec.key, lsp_jump(spec), {
+                buffer = bufnr,
+                desc = ("LSP: %s (diff-aware)"):format(spec.label),
+              })
+            end
           end
-          set_gd()
+          set_jumps()
           -- when the buffer first opens inside the view, lsp.lua's LspAttach
-          -- fires after this hook and its plain gd would win; this autocmd is
-          -- created later than lsp.lua's, so it runs after and re-applies ours
-          vim.api.nvim_create_autocmd("LspAttach", { buffer = bufnr, callback = set_gd })
+          -- fires after this hook and its plain mappings would win; this autocmd
+          -- is created later than lsp.lua's, so it runs after and re-applies ours
+          vim.api.nvim_create_autocmd("LspAttach", { buffer = bufnr, callback = set_jumps })
+        end
+        -- the view's windows inherit the jumplist of the window it was split
+        -- from, which is full of files that have nothing to do with this diff
+        if not vim.w[winid].diffview_jumps_cleared then
+          vim.w[winid].diffview_jumps_cleared = true
+          vim.api.nvim_win_call(winid, function()
+            vim.cmd("clearjumps")
+          end)
         end
         local focused = vim.g.diffview_focused or false
         vim.wo[winid].foldenable = focused
@@ -231,6 +446,7 @@ return {
       view = {
         { "n", "q", "<cmd>DiffviewClose<CR>", { desc = "Close diffview" } },
         { "n", "<Tab>", "<cmd>DiffviewToggleFiles<CR>", { desc = "Toggle file panel" } },
+        { "n", "<C-o>", jump_back, { desc = "Diff: jump back (stay in the diff)" } },
         { "n", "<leader>gf", toggle_focus, { desc = "Diff: toggle focused/full" } },
         { "n", "<leader>g/", diff_grep_prompt, { desc = "Diff: grep changed lines" } },
         { "n", "<leader>gl", layer_toggle, { desc = "Diff: toggle layered review" } },
@@ -242,6 +458,7 @@ return {
       },
       file_panel = {
         { "n", "q", "<cmd>DiffviewClose<CR>", { desc = "Close diffview" } },
+        { "n", "<C-o>", jump_back, { desc = "Diff: jump back (stay in the diff)" } },
         { "n", "<leader>g/", diff_grep_prompt, { desc = "Diff: grep changed lines" } },
         { "n", "<leader>gl", layer_toggle, { desc = "Diff: toggle layered review" } },
         { "n", "L", layer_assign, { desc = "Diff: assign file to ring [count]" } },
