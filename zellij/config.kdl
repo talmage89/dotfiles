@@ -5,6 +5,10 @@ keybinds {
     }
     shared_except "locked" {
         unbind "Ctrl g"
+        // Zellij's Tmux mode goes unused and swallows the prefix key of the
+        // real tmux running inside these panes. Unbinding its entry key leaves
+        // the mode unreachable and lets "Ctrl b" through to tmux itself.
+        unbind "Ctrl b"
         bind "Ctrl /" { SwitchToMode "Locked"; }
         bind "Alt h" "Alt Left"  { MoveFocus "Left"; }
         bind "Alt l" "Alt Right" { MoveFocus "Right"; }
