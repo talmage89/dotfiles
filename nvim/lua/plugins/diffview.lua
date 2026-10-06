@@ -256,15 +256,6 @@ local function layer_toggle()
   require("diffview-layers").toggle()
 end
 
-local function layer_assign()
-  local layers = require("diffview-layers")
-  if layers.is_armed() then
-    layers.assign(vim.v.count)
-  else
-    require("diffview.actions").open_commit_log()
-  end
-end
-
 local function layer_next()
   require("diffview-layers").cycle(1)
 end
@@ -450,8 +441,6 @@ return {
         { "n", "<leader>gf", toggle_focus, { desc = "Diff: toggle focused/full" } },
         { "n", "<leader>g/", diff_grep_prompt, { desc = "Diff: grep changed lines" } },
         { "n", "<leader>gl", layer_toggle, { desc = "Diff: toggle layered review" } },
-        -- L keeps its stock diffview behavior (open_commit_log) until armed
-        { "n", "L", layer_assign, { desc = "Diff: assign file to ring [count]" } },
         { "n", "]l", layer_next, { desc = "Diff: next layer (outward)" } },
         { "n", "[l", layer_prev, { desc = "Diff: prev layer (inward)" } },
         { "n", "gL", layer_list, { desc = "Diff: list layer assignments" } },
@@ -461,7 +450,6 @@ return {
         { "n", "<C-o>", jump_back, { desc = "Diff: jump back (stay in the diff)" } },
         { "n", "<leader>g/", diff_grep_prompt, { desc = "Diff: grep changed lines" } },
         { "n", "<leader>gl", layer_toggle, { desc = "Diff: toggle layered review" } },
-        { "n", "L", layer_assign, { desc = "Diff: assign file to ring [count]" } },
         { "n", "]l", layer_next, { desc = "Diff: next layer (outward)" } },
         { "n", "[l", layer_prev, { desc = "Diff: prev layer (inward)" } },
         { "n", "gL", layer_list, { desc = "Diff: list layer assignments" } },
