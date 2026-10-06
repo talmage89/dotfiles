@@ -151,6 +151,13 @@ local function ring_numbers(layers)
   return nums
 end
 
+-- Diffview runs every path arg through expand(), which would substitute
+-- `$param` segments (React Router flat routes) as env vars; escape so the
+-- path survives literally.
+local function pathspec(toplevel, path)
+  return vim.fn.fnameescape(vim.fs.joinpath(toplevel, path))
+end
+
 -- The position cycle is 1..#rings then periphery — there is deliberately
 -- no "all files" position; that is what an unarmed diffview already shows.
 -- Positions are stamped onto each view this opens; pos 0 marks a view
@@ -165,7 +172,7 @@ local function open_position(toplevel, rev_arg, rec, pos, close_current)
     local n, count = nums[pos], 0
     for path, ring in pairs(layers) do
       if ring == n then
-        args[#args + 1] = vim.fs.joinpath(toplevel, path)
+        args[#args + 1] = pathspec(toplevel, path)
         count = count + 1
       end
     end
@@ -173,7 +180,7 @@ local function open_position(toplevel, rev_arg, rec, pos, close_current)
     detail = ("%d file%s"):format(count, count == 1 and "" or "s")
   else
     for path in pairs(layers) do
-      args[#args + 1] = ":(exclude)" .. vim.fs.joinpath(toplevel, path)
+      args[#args + 1] = ":(exclude)" .. pathspec(toplevel, path)
     end
     name = "Periphery"
   end
