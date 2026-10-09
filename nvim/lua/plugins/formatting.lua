@@ -17,6 +17,22 @@ local function biome_or(fallback)
   end
 end
 
+-- prettierd detaches a daemon per working directory and never idles out,
+-- so record each directory it ran in and stop those daemons on exit.
+local prettierd_dirs = {}
+
+local function prettierd_cwd(self, ctx)
+  local dir = require("conform.formatters.prettierd").cwd(self, ctx) or vim.fn.getcwd()
+  prettierd_dirs[dir] = true
+  return dir
+end
+
+local function stop_prettierd_daemons()
+  for dir in pairs(prettierd_dirs) do
+    vim.system({ "prettierd", "stop" }, { cwd = dir, detach = true })
+  end
+end
+
 return {
   "stevearc/conform.nvim",
   event = { "BufWritePre" },
@@ -56,6 +72,7 @@ return {
       cs = { "csharpier" },
     },
     formatters = {
+      prettierd = { cwd = prettierd_cwd },
       -- conform's builtin targets the csharpier >= 0.30 CLI
       -- (`format --stdin-path`); projects pinning 0.28.x in
       -- .config/dotnet-tools.json need `--write-stdout` instead.
@@ -84,5 +101,9 @@ return {
   },
   init = function()
     vim.o.formatexpr = "v:lua.require'conform'.formatexpr()"
+    vim.api.nvim_create_autocmd("VimLeavePre", {
+      group = vim.api.nvim_create_augroup("stop_prettierd", { clear = true }),
+      callback = stop_prettierd_daemons,
+    })
   end,
 }

@@ -14,7 +14,7 @@ return {
     event = "VeryLazy",
     opts = {
       ensure_installed = {
-        "vtsls",
+        "tsgo",
         "eslint-lsp",
         "biome",
         "json-lsp",
@@ -82,50 +82,33 @@ return {
         capabilities = capabilities,
       })
 
-      vim.lsp.config("vtsls", {
+      local inlay_hints = {
+        parameterNames = { enabled = "all" },
+        parameterTypes = { enabled = true },
+        variableTypes = { enabled = true },
+        propertyDeclarationTypes = { enabled = true },
+        functionLikeReturnTypes = { enabled = true },
+        enumMemberValues = { enabled = true },
+      }
+
+      vim.lsp.config("tsgo", {
         settings = {
           typescript = {
-            tsserver = {
-              maxTsServerMemory = 8192,
-            },
             preferences = {
               importModuleSpecifier = "non-relative",
               importModuleSpecifierEnding = "auto",
             },
-            updateImportsOnFileMove = { enabled = "always" },
-            inlayHints = {
-              parameterNames = { enabled = "all" },
-              parameterTypes = { enabled = true },
-              variableTypes = { enabled = true },
-              propertyDeclarationTypes = { enabled = true },
-              functionLikeReturnTypes = { enabled = true },
-              enumMemberValues = { enabled = true },
-            },
-            format = { enable = false },
-            suggest = { completeFunctionCalls = true },
+            inlayHints = inlay_hints,
           },
           javascript = {
-            inlayHints = {
-              parameterNames = { enabled = "all" },
-              parameterTypes = { enabled = true },
-              variableTypes = { enabled = true },
-              propertyDeclarationTypes = { enabled = true },
-              functionLikeReturnTypes = { enabled = true },
-              enumMemberValues = { enabled = true },
-            },
-            format = { enable = false },
-          },
-          vtsls = {
-            experimental = {
-              completion = { enableServerSideFuzzyMatch = true },
-            },
+            inlayHints = inlay_hints,
           },
         },
       })
 
       -- eslint and biome each attach only where their own config file exists,
       -- so enabling both keeps work (eslint) and personal (biome) repos apart.
-      vim.lsp.enable({ "vtsls", "eslint", "biome", "jsonls", "bashls", "marksman", "prismals", "omnisharp" })
+      vim.lsp.enable({ "tsgo", "eslint", "biome", "jsonls", "bashls", "marksman", "prismals", "omnisharp" })
     end,
   },
 }
