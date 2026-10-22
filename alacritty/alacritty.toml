@@ -33,7 +33,10 @@ bindings = [
   { key = "Backspace", mods = "Option", chars = "\u001b\u007f" },
   { key = "Backspace", mods = "Command", chars = "\u0015" },
   { key = "L", mods = "Command", chars = "\u000c" },
-  { key = "Return", mods = "Shift", chars = "\u001b\r" }
+  { key = "Return", mods = "Shift", chars = "\u001b\r" },
+  # macOS delivers Ctrl+/ as a bare "/". Send the kitty-protocol encoding so
+  # Zellij sees "Ctrl /" (its lock toggle).
+  { key = "Slash", mods = "Control", chars = "\u001b[47;5u" }
 ]
 
 [terminal]
