@@ -13,4 +13,8 @@ return {
       quickfix = { enable = true },
     },
   },
+  config = function(_, opts)
+    require("patches.satellite")()
+    require("satellite").setup(opts)
+  end,
 }
